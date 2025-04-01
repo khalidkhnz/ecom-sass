@@ -29,6 +29,7 @@ const productSchema = z.object({
   status: z.enum(["draft", "active", "archived"]).default("draft"),
   featured: z.boolean().default(false),
   images: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;
@@ -41,11 +42,14 @@ export async function getProducts() {
         id: products.id,
         name: products.name,
         slug: products.slug,
+        description: products.description,
         price: products.price,
         inventory: products.inventory,
         status: products.status,
         featured: products.featured,
         categoryId: products.categoryId,
+        images: products.images,
+        tags: products.tags,
         createdAt: products.createdAt,
       })
       .from(products)
@@ -141,6 +145,7 @@ export async function createProduct(data: ProductFormValues) {
       status: validatedData.status,
       featured: validatedData.featured,
       images: validatedData.images,
+      tags: validatedData.tags || [],
     };
 
     await db.insert(products).values(newProduct);
@@ -200,6 +205,7 @@ export async function updateProduct(id: string, data: ProductFormValues) {
         status: validatedData.status,
         featured: validatedData.featured,
         images: validatedData.images,
+        tags: validatedData.tags || [],
         updatedAt: new Date(),
       })
       .where(eq(products.id, id));

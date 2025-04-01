@@ -11,6 +11,24 @@ import {
 } from "@/app/actions/products";
 import { toast } from "sonner";
 
+// Define Product interface
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: string;
+  inventory: number;
+  status: string;
+  featured: boolean;
+  categoryId: string | null;
+  categoryName: string | null;
+  tags: string[];
+  images: string[];
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
 // Keys for product queries
 export const productKeys = {
   all: ["products"] as const,
@@ -107,7 +125,7 @@ export function useProducts() {
   });
 
   return {
-    products: productsQuery.data || [],
+    products: productsQuery.data || ([] as Product[]),
     isLoading: productsQuery.isLoading,
     isError: productsQuery.isError,
     error: productsQuery.error,

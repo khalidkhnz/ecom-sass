@@ -17,12 +17,15 @@ import {
   ChevronRight,
   LogOut,
 } from "lucide-react";
+import { useSettings } from "@/hooks/useSettings";
 
 interface AdminSidebarProps {
   user: User;
 }
 
 export default function AdminSidebar({ user }: AdminSidebarProps) {
+  const { settings, isLoading } = useSettings();
+
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -66,7 +69,12 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       } transition-all duration-300 bg-sidebar-primary-foreground border-r border-gray-200 flex flex-col h-screen sticky top-0`}
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
-        {!collapsed && <div className="font-bold text-xl">Admin Panel</div>}
+        {!collapsed && !isLoading && (
+          <div className="font-bold text-xl">
+            {settings?.store?.storeName || "Admin Panel"}
+          </div>
+        )}
+
         <Button
           variant="ghost"
           size="icon"

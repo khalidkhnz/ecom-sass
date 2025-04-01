@@ -22,6 +22,7 @@ export const products = pgTable("products", {
   featured: boolean().notNull().default(false),
   status: text().notNull().default("draft"), // draft, active, archived
   images: text().array(),
+  tags: text().array(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp()
     .notNull()

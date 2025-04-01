@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Trash } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
 
 import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
@@ -56,10 +58,11 @@ const formSchema = z.object({
     .number()
     .int()
     .min(0, { message: "Inventory must be a non-negative integer" }),
-  categoryId: z.string().optional().nullable(),
-  status: z.enum(["draft", "active", "archived"]).default("draft"),
-  featured: z.boolean().default(false),
-  images: z.array(z.string()).default([]),
+  categoryId: z.string().optional(),
+  status: z.enum(["draft", "active", "archived"]),
+  featured: z.boolean(),
+  images: z.array(z.string()),
+  tags: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -93,6 +96,7 @@ export function ProductForm({ productId }: ProductFormProps) {
       status: "draft",
       featured: false,
       images: [],
+      tags: [],
     },
   });
 
@@ -105,10 +109,11 @@ export function ProductForm({ productId }: ProductFormProps) {
         description: initialData.description || "",
         price: Number(initialData.price),
         inventory: initialData.inventory,
-        categoryId: initialData.categoryId || "",
+        categoryId: initialData.category?.id || initialData.categoryId || "",
         status: initialData.status as "draft" | "active" | "archived",
         featured: initialData.featured,
         images: initialData.images || [],
+        tags: initialData.tags || [],
       });
     }
   }, [initialData, form]);
@@ -440,6 +445,65 @@ export function ProductForm({ productId }: ProductFormProps) {
                   )}
                 />
               </div>
+            </div>
+
+            <div className="space-y-4">
+              <Heading title="Tags" size="sm" />
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Tags</FormLabel>
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {field.value.map((tag, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="px-3 py-1.5"
+                          >
+                            {tag}
+                            <button
+                              type="button"
+                              className="ml-2 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                const newTags = [...field.value];
+                                newTags.splice(index, 1);
+                                field.onChange(newTags);
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="flex space-x-2">
+                        <Input
+                          placeholder="Add tag and press Enter"
+                          className="flex-1"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const input = e.currentTarget;
+                              const value = input.value.trim();
+                              if (value && !field.value.includes(value)) {
+                                field.onChange([...field.value, value]);
+                                input.value = "";
+                              }
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <FormDescription>
+                      Press Enter to add a tag. Tags help categorize and search
+                      products.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
           <Button disabled={loading} className="ml-auto" type="submit">
