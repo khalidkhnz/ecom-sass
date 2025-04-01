@@ -1,4 +1,8 @@
-import { GoogleSignInButton } from "@/components/auth/auth-buttons";
+import {
+  EmailSignInButton,
+  GoogleSignInButton,
+  SignUpButton,
+} from "@/components/auth/auth-buttons";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
 export default async function LoginPage() {
@@ -20,6 +25,16 @@ export default async function LoginPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <GoogleSignInButton />
+
+          <div className="flex items-center gap-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <EmailSignInButton />
+
+          <SignUpButton />
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button variant="link" asChild>

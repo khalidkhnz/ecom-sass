@@ -4,34 +4,42 @@ import { db } from "@/db/index"; // your drizzle instance
 import { env } from "./env";
 import * as schema from "@/db/schema/auth-schema";
 import bcrypt from "bcrypt";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./lib/email";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg", // or "mysql", "sqlite"
-    // schema: {
-    //   users: schema.user,
-    //   accounts: schema.account,
-    //   sessions: schema.session,
-    //   verifications: schema.verification,
-    // },
+    schema: {
+      user: schema.user,
+      account: schema.account,
+      session: schema.session,
+      verification: schema.verification,
+    },
   }),
   trustedOrigins: ["http://localhost:3000"],
   emailVerification: {
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     expiresIn: 60 * 60,
-    async sendVerificationEmail({ token, url, user }, request) {},
+    async sendVerificationEmail({ token, url, user }, request) {
+      await sendVerificationEmail(user.email, token, url, user.name);
+    },
     async onEmailVerification(
       { createdAt, email, emailVerified, id, name, updatedAt, image },
       request
-    ) {},
+    ) {
+      // Notification or logic to execute after email is verified
+      console.log(`Email verified for user: ${id}, ${email}`);
+    },
   },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
-    maxPasswordLength: 20,
-    requireEmailVerification: true,
-    async sendResetPassword({ token, url, user }, request) {},
+    maxPasswordLength: 30,
+    requireEmailVerification: false,
+    async sendResetPassword({ token, url, user }, request) {
+      await sendPasswordResetEmail(user.email, token, url, user.name);
+    },
     resetPasswordTokenExpiresIn: 60 * 60,
     password: {
       hash(password) {
