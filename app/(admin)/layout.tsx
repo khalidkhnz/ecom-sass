@@ -2,10 +2,7 @@ import { users } from "@/schema/users";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { AdminLayout } from "@/app/(admin)/_components/admin-layout";
 import { authorize } from "@/lib/authorize";
-import { DarkModeScript } from "drizzle-admin/drizzle-ui";
-import "drizzle-admin/styles";
 
 export default async function Layout({
   children,
@@ -22,12 +19,7 @@ export default async function Layout({
     redirect("/admin-signin");
   }
 
-  return (
-    <AdminLayout userRow={userRow}>
-      {children}
-      <DarkModeScript />
-    </AdminLayout>
-  );
+  return <>{children}</>;
 }
 
 export const dynamic = "force-dynamic";

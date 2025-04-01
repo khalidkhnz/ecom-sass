@@ -2,7 +2,6 @@ import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { users } from "@/schema/users";
-import { PrivateLayout } from "@/app/(private)/_components/private-layout";
 import { authorize } from "@/lib/authorize";
 
 export default async function Layout({
@@ -20,11 +19,7 @@ export default async function Layout({
     redirect("/signin");
   }
 
-  return (
-    <PrivateLayout userRow={userRow} >
-      {children}
-    </PrivateLayout>
-  );
+  return <>{children}</>;
 }
 
 export const dynamic = "force-dynamic";

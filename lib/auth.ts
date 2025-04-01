@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import NextAuth from "next-auth"
+import NextAuth from "next-auth";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type { Provider } from "next-auth/providers";
 import { eq } from "drizzle-orm";
@@ -28,7 +28,7 @@ const adapter = {
       name: data.name,
       image: data.image,
       emailVerified: data.emailVerified,
-      role: "user"
+      role: "user",
     };
 
     await db.insert(users).values(newUser);
@@ -37,38 +37,38 @@ const adapter = {
 };
 
 const providers: Provider[] = [
-    GitHub,
-    Google,
-    Postmark({ from: "noreply@example.com" }),
-    Nodemailer({
-      server: process.env.EMAIL_SERVER,
-      from: process.env.EMAIL_FROM,
-    }),
-    Credentials({
-      credentials: {
-        email: {},
-        password: { type: "password" },
-      },
-      authorize: async (credentials) => {
-        const email = credentials.email as string;
-        const password = credentials.password as string;
-        const userRow = await db.query.users.findFirst({
-          where: eq(users.email, email),
-        });
-        if (!userRow) {
-          throw new Error("User not found.");
-        }
-        if (!userRow.password) {
-          throw new Error("Password not found.");
-        }
-        const valid = bcrypt.compareSync(password, userRow.password);
-        if (!valid) {
-          throw new Error("Invalid password.");
-        }
-        return userRow;
-      },
-    }),
-]
+  GitHub,
+  Google,
+  Postmark({ from: "noreply@example.com" }),
+  Nodemailer({
+    server: process.env.EMAIL_SERVER,
+    from: process.env.EMAIL_FROM,
+  }),
+  Credentials({
+    credentials: {
+      email: {},
+      password: { type: "password" },
+    },
+    authorize: async (credentials) => {
+      const email = credentials.email as string;
+      const password = credentials.password as string;
+      const userRow = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+      if (!userRow) {
+        throw new Error("User not found.");
+      }
+      if (!userRow.password) {
+        throw new Error("Password not found.");
+      }
+      const valid = bcrypt.compareSync(password, userRow.password);
+      if (!valid) {
+        throw new Error("Invalid password.");
+      }
+      return userRow;
+    },
+  }),
+];
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: adapter,
@@ -93,4 +93,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-})
+});

@@ -1,222 +1,127 @@
-"use client";
-
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import * as React from "react"
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
-} from "lucide-react";
-import { Input } from "./input";
-import { Button, ButtonVariant } from "./button";
-import { useState } from "react";
-import { Select, SelectOption } from "./select";
+  MoreHorizontalIcon,
+} from "lucide-react"
 
-export type PaginationOpts = {
-  showRowCount?: boolean;
-  enablePageInput?: boolean;
-  perPageInputType?: "text" | "select" | "none";
-  perPageOptions?: number[];
-  buttonVariant?: ButtonVariant;
-  rowSingularLabel?: string;
-  rowPluralLabel?: string;
-  perPageLabel?: string;
-};
+import { cn } from "@/lib/utils"
+import { Button, buttonVariants } from "@/components/ui/button"
 
-export function Pagination({
-  page,
-  totalPages,
-  pageSize,
-  count,
-  opts,
-}: {
-  page: number;
-  totalPages: number;
-  pageSize: number;
-  count: number;
-  opts?: PaginationOpts;
-}) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const [pageValue, setPageValue] = useState<string>(page.toString());
-  const [pageSizeValue, setPageSizeValue] = useState<string>(
-    pageSize.toString(),
-  );
-
-  const defaultOpts: PaginationOpts = {
-    showRowCount: true,
-    enablePageInput: false,
-    perPageInputType: "select",
-    perPageOptions: [10, 20, 50, 100, 200],
-    buttonVariant: "muted",
-    rowSingularLabel: "row",
-    rowPluralLabel: "rows",
-    perPageLabel: "per page",
-  };
-
-  const mergedOpts = {
-    ...defaultOpts,
-    ...opts,
-  };
-
-  function first() {
-    const params = new URLSearchParams(searchParams || "");
-    const newPage = "1";
-    params.set("page", newPage);
-    setPageValue(newPage);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
-  function previous() {
-    const params = new URLSearchParams(searchParams || "");
-    const newPage = (page - 1).toString();
-    params.set("page", newPage);
-    setPageValue(newPage);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
-  function next() {
-    const params = new URLSearchParams(searchParams || "");
-    const newPage = (page + 1).toString();
-    params.set("page", newPage);
-    setPageValue(newPage);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
-  function last() {
-    const params = new URLSearchParams(searchParams || "");
-    const newPage = totalPages.toString();
-    params.set("page", newPage);
-    setPageValue(newPage);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
-  function handlePageKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      const params = new URLSearchParams(searchParams || "");
-      const num = parseInt(pageValue);
-      if (Number.isInteger(num)) {
-        params.set("page", num.toString());
-        router.push(`${pathname}?${params.toString()}`);
-      } else {
-        params.set("page", "1");
-        router.push(`${pathname}?${params.toString()}`);
-        setPageValue("1");
-      }
-    }
-  }
-
-  function handlePageSizeKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
-      const params = new URLSearchParams(searchParams || "");
-      const num = parseInt(pageSizeValue);
-      if (Number.isInteger(num)) {
-        params.set("pageSize", num.toString());
-        router.push(`${pathname}?${params.toString()}`);
-      } else {
-        params.set("pageSize", "1");
-        router.push(`${pathname}?${params.toString()}`);
-        setPageSizeValue("1");
-      }
-    }
-  }
-
-  function handleSelectPageSize(newPageSize: string) {
-    const params = new URLSearchParams(searchParams || "");
-    params.set("pageSize", newPageSize);
-    params.set("page", "1"); // Reset to the first page when page size changes
-    setPageSizeValue(newPageSize);
-    router.push(`${pathname}?${params.toString()}`);
-  }
-
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {mergedOpts.showRowCount && (
-        <div className="text-nowrap">
-          {count}{" "}
-          {count === 1
-            ? mergedOpts.rowSingularLabel
-            : mergedOpts.rowPluralLabel}
-        </div>
+    <nav
+      role="navigation"
+      aria-label="pagination"
+      data-slot="pagination"
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  )
+}
+
+function PaginationContent({
+  className,
+  ...props
+}: React.ComponentProps<"ul">) {
+  return (
+    <ul
+      data-slot="pagination-content"
+      className={cn("flex flex-row items-center gap-1", className)}
+      {...props}
+    />
+  )
+}
+
+function PaginationItem({ ...props }: React.ComponentProps<"li">) {
+  return <li data-slot="pagination-item" {...props} />
+}
+
+type PaginationLinkProps = {
+  isActive?: boolean
+} & Pick<React.ComponentProps<typeof Button>, "size"> &
+  React.ComponentProps<"a">
+
+function PaginationLink({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}: PaginationLinkProps) {
+  return (
+    <a
+      aria-current={isActive ? "page" : undefined}
+      data-slot="pagination-link"
+      data-active={isActive}
+      className={cn(
+        buttonVariants({
+          variant: isActive ? "outline" : "ghost",
+          size,
+        }),
+        className
       )}
-      <div>
-        <Button
-          variant={mergedOpts.buttonVariant}
-          size="icon"
-          onClick={first}
-          disabled={page <= 1}
-        >
-          <ChevronsLeftIcon />
-        </Button>
-      </div>
-      <div>
-        <Button
-          variant={mergedOpts.buttonVariant}
-          size="icon"
-          onClick={previous}
-          disabled={page <= 1}
-        >
-          <ChevronLeftIcon />
-        </Button>
-      </div>
-      <div className="text-nowrap">
-        {mergedOpts.enablePageInput && (
-          <Input
-            name="page"
-            className="w-14"
-            value={pageValue}
-            onChange={(e) => setPageValue(e.target.value)}
-            onKeyDown={handlePageKeyDown}
-          />
-        )}
-        {!mergedOpts.enablePageInput && <>{pageValue}</>}
-      </div>
-      <div className="text-nowrap"> / {totalPages}</div>
-      <div>
-        <Button
-          variant={mergedOpts.buttonVariant}
-          size="icon"
-          onClick={next}
-          disabled={page >= totalPages}
-        >
-          <ChevronRightIcon />
-        </Button>
-      </div>
-      <div>
-        <Button
-          variant={mergedOpts.buttonVariant}
-          size="icon"
-          onClick={last}
-          disabled={page >= totalPages}
-        >
-          <ChevronsRightIcon />
-        </Button>
-      </div>
-      <div className="flex items-center gap-2">
-        {mergedOpts.perPageInputType === "text" && (
-          <Input
-            name="pageSize"
-            value={pageSizeValue}
-            className="w-14"
-            onChange={(e) => setPageSizeValue(e.target.value)}
-            onKeyDown={handlePageSizeKeyDown}
-          />
-        )}
-        {mergedOpts.perPageInputType === "select" && (
-          <Select
-            value={pageSizeValue}
-            onChange={(e) => handleSelectPageSize(e.target.value)}
-          >
-            {mergedOpts.perPageOptions?.map((num) => (
-              <SelectOption key={num} value={num}>
-                {num}
-              </SelectOption>
-            ))}
-          </Select>
-        )}
-        <div className="text-nowrap">{mergedOpts.perPageLabel}</div>
-      </div>
-    </div>
-  );
+      {...props}
+    />
+  )
+}
+
+function PaginationPrevious({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) {
+  return (
+    <PaginationLink
+      aria-label="Go to previous page"
+      size="default"
+      className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
+      {...props}
+    >
+      <ChevronLeftIcon />
+      <span className="hidden sm:block">Previous</span>
+    </PaginationLink>
+  )
+}
+
+function PaginationNext({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) {
+  return (
+    <PaginationLink
+      aria-label="Go to next page"
+      size="default"
+      className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
+      {...props}
+    >
+      <span className="hidden sm:block">Next</span>
+      <ChevronRightIcon />
+    </PaginationLink>
+  )
+}
+
+function PaginationEllipsis({
+  className,
+  ...props
+}: React.ComponentProps<"span">) {
+  return (
+    <span
+      aria-hidden
+      data-slot="pagination-ellipsis"
+      className={cn("flex size-9 items-center justify-center", className)}
+      {...props}
+    >
+      <MoreHorizontalIcon className="size-4" />
+      <span className="sr-only">More pages</span>
+    </span>
+  )
+}
+
+export {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
 }
