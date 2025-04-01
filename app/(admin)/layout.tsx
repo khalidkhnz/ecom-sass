@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { authorize } from "@/lib/authorize";
+import AdminSidebar from "./admin-sidebar";
 
 export default async function Layout({
   children,
@@ -16,10 +17,15 @@ export default async function Layout({
   });
 
   if (!userRow) {
-    redirect("/admin-signin");
+    redirect("/admin-login");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex min-h-screen bg-accent">
+      <AdminSidebar user={userRow} />
+      <div className="flex-1 p-8">{children}</div>
+    </div>
+  );
 }
 
 export const dynamic = "force-dynamic";
