@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,8 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useCategories, useCategory } from "@/hooks/useCategories";
+import { CategoryFormValues } from "@/app/actions/categories";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -31,30 +32,37 @@ const formSchema = z.object({
   description: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
-
 interface CategoryFormProps {
-  initialData?: {
-    id: string;
-    name: string;
-    slug: string;
-    description?: string;
-  };
+  categoryId?: string;
 }
 
-export function CategoryForm({ initialData }: CategoryFormProps = {}) {
+export function CategoryForm({ categoryId }: CategoryFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const isEditing = !!initialData;
+  const isEditing = !!categoryId;
 
-  const form = useForm<FormValues>({
+  const { createCategory, updateCategory } = useCategories();
+  const { data: initialData, isLoading } = useCategory(categoryId || "");
+
+  const form = useForm<CategoryFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: initialData?.name || "",
-      slug: initialData?.slug || "",
-      description: initialData?.description || "",
+      name: "",
+      slug: "",
+      description: "",
     },
   });
+
+  // Set form values when initialData is loaded
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        slug: initialData.slug,
+        description: initialData.description || "",
+      });
+    }
+  }, [initialData, form]);
 
   // Generate slug from name (only when creating new)
   const generateSlug = (name: string) => {
@@ -67,27 +75,25 @@ export function CategoryForm({ initialData }: CategoryFormProps = {}) {
     }
   };
 
-  async function onSubmit(data: FormValues) {
+  async function onSubmit(data: CategoryFormValues) {
     setLoading(true);
 
     try {
-      // This would normally call a server action to save the category
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast.success(
-        isEditing
-          ? "Category updated successfully"
-          : "Category created successfully"
-      );
-
+      if (isEditing && categoryId) {
+        await updateCategory({ id: categoryId, data });
+      } else {
+        await createCategory(data);
+      }
       router.push("/admin/categories");
     } catch (error) {
-      toast.error(
-        isEditing ? "Failed to update category" : "Failed to create category"
-      );
+      console.error(error);
     } finally {
       setLoading(false);
     }
+  }
+
+  if (isEditing && isLoading) {
+    return <div className="p-8 text-center">Loading category data...</div>;
   }
 
   return (

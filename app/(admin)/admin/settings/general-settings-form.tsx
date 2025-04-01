@@ -16,12 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import {
-  getSettings,
-  updateGeneralSettings,
-  type GeneralSettingsFormValues,
-} from "@/app/actions/settings";
+import { useSettings } from "@/hooks/useSettings";
+import { type GeneralSettingsFormValues } from "@/app/actions/settings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Define form schema with Zod - must match the server-side schema
 const generalSettingsSchema = z.object({
@@ -37,8 +34,8 @@ const generalSettingsSchema = z.object({
 });
 
 export function GeneralSettingsForm() {
-  const [loading, setLoading] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { settings, isLoading, updateGeneralSettings } = useSettings();
 
   const form = useForm<GeneralSettingsFormValues>({
     resolver: zodResolver(generalSettingsSchema),
@@ -51,160 +48,171 @@ export function GeneralSettingsForm() {
     },
   });
 
-  // Fetch settings on component mount
+  // Set form values when settings data is loaded
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const settings = await getSettings();
-        form.reset(settings.general);
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-        toast.error("Failed to load settings");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSettings();
-  }, [form]);
+    if (settings) {
+      form.reset(settings.general);
+    }
+  }, [settings, form]);
 
   async function onSubmit(data: GeneralSettingsFormValues) {
-    setLoading(true);
-
+    setIsSubmitting(true);
     try {
-      const result = await updateGeneralSettings(data);
-
-      if (result.success) {
-        toast.success("General settings updated successfully");
-      } else {
-        toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to update settings"
-        );
-      }
+      await updateGeneralSettings(data);
     } catch (error) {
       console.error("Error saving settings:", error);
-      toast.error("Failed to update settings");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
+  }
+
+  if (isLoading) {
+    return <GeneralSettingsFormSkeleton />;
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {isLoading ? (
-          <div className="py-4 text-center">Loading settings...</div>
-        ) : (
-          <>
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="siteName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Site Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      The name of your website or application
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="siteName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Site Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  The name of your website or application
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="siteUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Site URL</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      The URL of your website (including https://)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="siteUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Site URL</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  The URL of your website (including https://)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="adminEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Admin Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Email address for system notifications
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="adminEmail"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Admin Email</FormLabel>
+                <FormControl>
+                  <Input type="email" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Email address for system notifications
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Preferences</h3>
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Preferences</h3>
 
-              <FormField
-                control={form.control}
-                name="enableNotifications"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Email Notifications
-                      </FormLabel>
-                      <FormDescription>
-                        Receive email notifications about important events
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="enableNotifications"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    Email Notifications
+                  </FormLabel>
+                  <FormDescription>
+                    Receive email notifications about important events
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="enableAnalytics"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Analytics</FormLabel>
-                      <FormDescription>
-                        Collect anonymous usage data to improve your store
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="enableAnalytics"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Analytics</FormLabel>
+                  <FormDescription>
+                    Collect anonymous usage data to improve your store
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save Settings"}
-            </Button>
-          </>
-        )}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save Settings"}
+        </Button>
       </form>
     </Form>
+  );
+}
+
+function GeneralSettingsFormSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="space-y-2">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-4 mt-6">
+        <Skeleton className="h-6 w-32" />
+
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex flex-row items-center justify-between rounded-lg border p-4"
+          >
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+            <Skeleton className="h-6 w-12" />
+          </div>
+        ))}
+      </div>
+
+      <Skeleton className="h-10 w-32 mt-6" />
+    </div>
   );
 }

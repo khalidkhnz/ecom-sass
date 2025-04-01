@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useCategories } from "@/hooks/useCategories";
 
 interface Category {
   id: string;
@@ -39,13 +40,11 @@ interface Category {
   createdAt: string;
 }
 
-interface CategoryTableProps {
-  categories: Category[];
-}
-
-export function CategoryTable({ categories }: CategoryTableProps) {
+export function CategoryTable() {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { categories, isLoading, deleteCategory } = useCategories();
+
   const categoryToDelete = categories.find(
     (category) => category.id === deleteId
   );
@@ -56,18 +55,8 @@ export function CategoryTable({ categories }: CategoryTableProps) {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-
-    // This would normally call a server action to delete the category
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast.success("Category deleted successfully");
-      setDeleteId(null);
-      // In a real app, you'd refresh the data here
-    } catch (error) {
-      toast.error("Failed to delete category");
-    }
+    await deleteCategory(deleteId);
+    setDeleteId(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -77,6 +66,10 @@ export function CategoryTable({ categories }: CategoryTableProps) {
       day: "numeric",
     });
   };
+
+  if (isLoading) {
+    return <CategoryTableSkeleton />;
+  }
 
   return (
     <>
@@ -176,5 +169,48 @@ export function CategoryTable({ categories }: CategoryTableProps) {
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function CategoryTableSkeleton() {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Slug</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead className="text-center">Products</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <Skeleton className="h-6 w-24" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-32" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-48" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-6 w-8 mx-auto" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-6 w-28" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="h-8 w-8 ml-auto" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

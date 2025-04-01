@@ -1,16 +1,22 @@
 import { Separator } from "@/components/ui/separator";
-import { CategoryForm } from "../category-form";
+import { CategoryForm } from "../../category-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
-export default function NewCategoryPage() {
+export default function EditCategoryPage({
+  params,
+}: {
+  params: { categoryId: string };
+}) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">New Category</h1>
-          <p className="text-muted-foreground">Create a new product category</p>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Category</h1>
+          <p className="text-muted-foreground">
+            Update an existing product category
+          </p>
         </div>
         <Button variant="outline" size="sm" asChild>
           <Link href="/admin/categories">
@@ -21,7 +27,7 @@ export default function NewCategoryPage() {
       </div>
       <Separator />
       <div className="max-w-2xl">
-        <CategoryForm />
+        <CategoryForm categoryId={params.categoryId} />
       </div>
     </div>
   );

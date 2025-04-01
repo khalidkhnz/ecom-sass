@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { PT_Sans } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/lib/providers";
+import { Toaster } from "sonner";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -29,7 +31,10 @@ export default function RootLayout({
       <body
         className={`${nunito.variable} ${ptSans.variable} antialiased bg-background text-foreground`}
       >
-        {children}
+        <Providers>
+          {children}
+          <Toaster position="top-right" />
+        </Providers>
       </body>
     </html>
   );
