@@ -1,24 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-commerce Project with Next.js and Drizzle ORM
+
+This is an e-commerce project built with Next.js and Drizzle ORM for PostgreSQL database management.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database (local or cloud-based service like Neon, Supabase, Vercel Postgres)
+
+### Setup
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd ecom
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up your environment variables:
+
+Create a `.env` file in the root directory with the following:
+
+```
+DATABASE_URL="postgres://username:password@localhost:5432/ecom_db"
+```
+
+Replace with your actual PostgreSQL database credentials.
+
+### Database Setup
+
+1. Generate migrations from your schema:
+
+```bash
+npm run db:generate
+```
+
+2. Apply migrations to your database:
+
+```bash
+npm run db:migrate
+```
+
+3. (Optional) Seed your database with sample data:
+
+```bash
+npm run db:seed
+```
+
+4. (Optional) Use Drizzle Studio to view and edit your data:
+
+```bash
+npm run db:studio
+```
+
+### Development
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The project uses Drizzle ORM with the following tables:
+
+- **users**: User accounts and authentication
+- **products**: Product catalog
+- **orders**: Customer orders
+- **orderItems**: Items within each order (join table)
+
+## API Endpoints
+
+- `/api/db-test` - Test the database connection and get a list of products
+
+## Drizzle Commands
+
+- `npm run db:generate` - Generate SQL migrations
+- `npm run db:push` - Push schema changes directly to the database
+- `npm run db:migrate` - Apply migrations to the database
+- `npm run db:studio` - Open Drizzle Studio to view/edit data
+
+## Technologies
+
+- [Next.js](https://nextjs.org/)
+- [Drizzle ORM](https://orm.drizzle.team/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
 
 ## Learn More
 
