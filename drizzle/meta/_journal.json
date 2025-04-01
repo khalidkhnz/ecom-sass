@@ -8,6 +8,13 @@
       "when": 1743515798567,
       "tag": "0000_funny_slyde",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1743522398852,
+      "tag": "0001_last_namor",
+      "breakpoints": true
     }
   ]
 }
