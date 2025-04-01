@@ -7,3 +7,4 @@ export {
 } from "./products";
 export { users, usersRelations } from "./users";
 export { orders, ordersRelations } from "./orders";
+export { account, session, user, verification } from "./auth-schema";
