@@ -31,11 +31,25 @@ export default function RootLayout({
       <body
         className={`${nunito.variable} ${ptSans.variable} antialiased bg-background text-foreground`}
       >
+        <Texture enabled={false} />
         <Providers>
           {children}
           <Toaster position="top-right" />
         </Providers>
       </body>
     </html>
+  );
+}
+
+function Texture({ enabled }: { enabled: boolean }) {
+  return (
+    <div
+      style={{
+        backgroundImage: "url('/texture.jpg')",
+      }}
+      className={`fixed inset-0 w-screen h-[100dvh] opacity-20 mix-blend-multiply z-100 pointer-events-none bg-repeat bg-cover ${
+        enabled ? "block" : "hidden"
+      }`}
+    />
   );
 }
