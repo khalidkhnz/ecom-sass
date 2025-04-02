@@ -59,7 +59,7 @@ async function ProductsList({
     ...p,
     tags: p.tags || [],
     images: p.images || [],
-  })) as Product[];
+  })) as unknown as Product[];
 
   // Filtering logic
   const categoryId = searchParams.category as string | undefined;

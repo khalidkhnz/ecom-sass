@@ -1,0 +1,1 @@
+CREATE TYPE "public"."product_label" AS ENUM('new', 'bestseller', 'featured', 'sale', 'limited');

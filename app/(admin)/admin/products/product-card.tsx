@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Edit, MoreHorizontal, Star, Trash } from "lucide-react";
+import { Edit, MoreHorizontal, Star, Trash, Tag } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -38,6 +39,25 @@ export function ProductCard({
     draft: "bg-gray-400",
     archived: "bg-red-500",
   };
+
+  // Check if there's an active discount
+  const now = new Date();
+  const hasDiscount =
+    product.discountPrice &&
+    (!product.discountStart || new Date(product.discountStart) <= now) &&
+    (!product.discountEnd || new Date(product.discountEnd) >= now);
+
+  const formatPrice = (price: string) => {
+    return Number(price).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+    });
+  };
+
+  // Check if in low stock
+  const isLowStock =
+    product.inventory > 0 &&
+    product.lowStockThreshold &&
+    product.inventory <= product.lowStockThreshold;
 
   return (
     <Card className="overflow-hidden border-0 rounded-xl shadow-lg">
@@ -65,6 +85,30 @@ export function ProductCard({
           />
         </button>
 
+        {/* Labels and Tags */}
+        {(product.labels?.length > 0 || isLowStock) && (
+          <div className="absolute top-3 left-3 flex flex-col gap-1">
+            {isLowStock && (
+              <Badge variant="destructive" className="text-xs">
+                Low Stock
+              </Badge>
+            )}
+            {product.labels?.slice(0, 2).map((label, i) => (
+              <Badge
+                key={i}
+                className={cn(
+                  "text-xs capitalize",
+                  label === "sale" && "bg-red-500",
+                  label === "new" && "bg-blue-500",
+                  label === "bestseller" && "bg-purple-500"
+                )}
+              >
+                {label}
+              </Badge>
+            ))}
+          </div>
+        )}
+
         {/* Status indicator */}
         <div className="absolute bottom-3 left-3">
           <div className="flex items-center gap-1.5">
@@ -80,13 +124,21 @@ export function ProductCard({
         </div>
 
         {/* Bottom price bar */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-2 bg-black/50 backdrop-blur-sm">
-          <div className="text-white font-bold text-lg">
-            ₹
-            {Number(product.price).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-            })}
-          </div>
+        <div className="absolute bottom-3 right-3 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-sm">
+          {hasDiscount ? (
+            <div className="flex items-center gap-2">
+              <div className="text-white/70 line-through text-sm">
+                ₹{formatPrice(product.price)}
+              </div>
+              <div className="text-white font-bold text-lg">
+                ₹{formatPrice(product.discountPrice!)}
+              </div>
+            </div>
+          ) : (
+            <div className="text-white font-bold text-lg">
+              ₹{formatPrice(product.price)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -94,9 +146,17 @@ export function ProductCard({
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-bold text-lg line-clamp-1">{product.name}</h3>
-            <p className="text-sm text-gray-500 line-clamp-1">
-              {product.categoryName || "Uncategorized"}
-            </p>
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              <p className="line-clamp-1">
+                {product.categoryName || "Uncategorized"}
+              </p>
+              {product.sku && (
+                <div className="flex items-center gap-0.5 text-xs">
+                  <Tag size={10} />
+                  <span>{product.sku}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <DropdownMenu>
@@ -128,6 +188,31 @@ export function ProductCard({
           </DropdownMenu>
         </div>
 
+        {/* Stock and Attribute Info */}
+        <div className="mt-2 grid grid-cols-2 gap-1 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-500">Stock:</span>
+            <span
+              className={cn(
+                "font-medium",
+                product.inventory <= 0
+                  ? "text-red-500"
+                  : isLowStock
+                  ? "text-amber-500"
+                  : "text-green-500"
+              )}
+            >
+              {product.inventory <= 0 ? "Out of stock" : product.inventory}
+            </span>
+          </div>
+          {product.soldCount > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Sold:</span>
+              <span className="font-medium">{product.soldCount}</span>
+            </div>
+          )}
+        </div>
+
         {/* Tags */}
         {product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
@@ -152,8 +237,14 @@ export function ProductCard({
         )}
       </CardContent>
 
-      <CardFooter className="px-4 py-2 text-xs text-gray-500 border-t">
-        Added {format(new Date(product.createdAt), "MMM d, yyyy")}
+      <CardFooter className="px-4 py-2 text-xs text-gray-500 border-t flex justify-between">
+        <span>Added {format(new Date(product.createdAt), "MMM d, yyyy")}</span>
+        {product.rating > 0 && (
+          <span className="flex items-center">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-1" />
+            {product.rating.toFixed(1)} ({product.reviewCount})
+          </span>
+        )}
       </CardFooter>
     </Card>
   );

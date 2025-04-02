@@ -17,16 +17,41 @@ export interface Product {
   name: string;
   slug: string;
   description: string | null;
+  shortDescription: string | null;
+  sku: string;
+  barcode: string | null;
+  brandId: string | null;
   price: string;
+  costPrice: string | null;
+  discountPrice: string | null;
+  discountStart: Date | null;
+  discountEnd: Date | null;
   inventory: number;
+  lowStockThreshold: number;
+  soldCount: number;
   status: string;
   featured: boolean;
   categoryId: string | null;
   categoryName: string | null;
+  vendorId: string | null;
   tags: string[];
   images: string[];
+  attributes: Record<string, any>;
+  rating: number;
+  reviewCount: number;
+  taxable: boolean;
+  taxClass: string | null;
+  weight: number | null;
+  dimensions: { length: number; width: number; height: number } | null;
+  shippingClass: string | null;
+  visibility: boolean;
+  isDigital: boolean;
+  fileUrl: string | null;
+  labels: string[];
+  metaTitle: string | null;
+  metaDescription: string | null;
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt: Date;
 }
 
 // Keys for product queries
