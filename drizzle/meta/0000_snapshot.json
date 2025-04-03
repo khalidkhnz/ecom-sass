@@ -1,5 +1,5 @@
 {
-  "id": "8d59623c-41c7-42ab-bec9-7c152f0b60a5",
+  "id": "0460674b-dab0-444c-a72d-240446acf356",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -546,7 +546,8 @@
           "name": "quantity",
           "type": "numeric(10, 0)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'0'"
         },
         "type": {
           "name": "type",
@@ -685,9 +686,10 @@
         },
         "rating": {
           "name": "rating",
-          "type": "numeric",
+          "type": "numeric(3, 2)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'0.00'"
         },
         "title": {
           "name": "title",
@@ -841,9 +843,10 @@
         },
         "price": {
           "name": "price",
-          "type": "numeric",
+          "type": "numeric(12, 4)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'0.0000'"
         },
         "inventory": {
           "name": "inventory",
@@ -1010,21 +1013,24 @@
         },
         "price": {
           "name": "price",
-          "type": "numeric",
+          "type": "numeric(12, 4)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'0.0000'"
         },
         "cost_price": {
           "name": "cost_price",
-          "type": "numeric",
+          "type": "numeric(12, 4)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'0.0000'"
         },
         "discount_price": {
           "name": "discount_price",
-          "type": "numeric",
+          "type": "numeric(12, 4)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'0.0000'"
         },
         "discount_start": {
           "name": "discount_start",
@@ -1065,6 +1071,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "subcategory_id": {
+          "name": "subcategory_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "vendor_id": {
           "name": "vendor_id",
           "type": "text",
@@ -1099,6 +1111,13 @@
           "notNull": false,
           "default": "'[]'::jsonb"
         },
+        "features": {
+          "name": "features",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
         "attributes": {
           "name": "attributes",
           "type": "jsonb",
@@ -1108,10 +1127,10 @@
         },
         "rating": {
           "name": "rating",
-          "type": "numeric",
+          "type": "numeric(3, 2)",
           "primaryKey": false,
           "notNull": false,
-          "default": "'0'"
+          "default": "'0.00'"
         },
         "review_count": {
           "name": "review_count",
@@ -1136,16 +1155,17 @@
         },
         "weight": {
           "name": "weight",
-          "type": "numeric",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'0.00'"
         },
         "dimensions": {
           "name": "dimensions",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false,
-          "default": "'{\"length\":0,\"width\":0,\"height\":0}'::jsonb"
+          "default": "'{\"length\":\"0.00\",\"width\":\"0.00\",\"height\":\"0.00\"}'::jsonb"
         },
         "shipping_class": {
           "name": "shipping_class",
@@ -1355,6 +1375,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "products_subcategory_id_subcategories_id_fk": {
+          "name": "products_subcategory_id_subcategories_id_fk",
+          "tableFrom": "products",
+          "tableTo": "subcategories",
+          "columnsFrom": [
+            "subcategory_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         },
         "products_vendor_id_vendors_id_fk": {
@@ -1591,10 +1624,10 @@
         },
         "commission_rate": {
           "name": "commission_rate",
-          "type": "numeric",
+          "type": "numeric(5, 2)",
           "primaryKey": false,
           "notNull": false,
-          "default": "'10'"
+          "default": "'10.00'"
         },
         "created_at": {
           "name": "created_at",
@@ -1781,6 +1814,85 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.subcategories": {
+      "name": "subcategories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "subcategories_category_id_categories_id_fk": {
+          "name": "subcategories_category_id_categories_id_fk",
+          "tableFrom": "subcategories",
+          "tableTo": "categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "subcategories_slug_unique": {
+          "name": "subcategories_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -1852,6 +1964,17 @@
     }
   },
   "enums": {
+    "public.product_label": {
+      "name": "product_label",
+      "schema": "public",
+      "values": [
+        "new",
+        "bestseller",
+        "featured",
+        "sale",
+        "limited"
+      ]
+    },
     "public.product_status": {
       "name": "product_status",
       "schema": "public",

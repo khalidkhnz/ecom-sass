@@ -1,1 +1,0 @@
-ALTER TABLE "products" ADD COLUMN "features" jsonb DEFAULT '[]'::jsonb;

@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1743532828039,
-      "tag": "0000_peaceful_husk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1743532906827,
-      "tag": "0001_tired_rocket_racer",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1743671196652,
-      "tag": "0002_flippant_corsair",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1743672841591,
-      "tag": "0003_glamorous_shriek",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1743673427949,
-      "tag": "0004_absent_firedrake",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1743676026922,
-      "tag": "0005_flowery_toro",
+      "when": 1743685852633,
+      "tag": "0000_greedy_shadowcat",
       "breakpoints": true
     }
   ]

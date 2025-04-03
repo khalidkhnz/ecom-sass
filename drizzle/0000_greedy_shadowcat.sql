@@ -1,3 +1,4 @@
+CREATE TYPE "public"."product_label" AS ENUM('new', 'bestseller', 'featured', 'sale', 'limited');--> statement-breakpoint
 CREATE TYPE "public"."product_status" AS ENUM('draft', 'active', 'archived');--> statement-breakpoint
 CREATE TYPE "public"."shipping_class" AS ENUM('standard', 'express', 'free', 'digital', 'heavy');--> statement-breakpoint
 CREATE TABLE "accounts" (
@@ -72,7 +73,7 @@ CREATE TABLE "inventory_transactions" (
 	"id" text PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
 	"variant_id" text,
-	"quantity" numeric(10, 0) NOT NULL,
+	"quantity" numeric(10, 0) DEFAULT '0' NOT NULL,
 	"type" text NOT NULL,
 	"reference" text,
 	"notes" text,
@@ -84,7 +85,7 @@ CREATE TABLE "product_reviews" (
 	"id" text PRIMARY KEY NOT NULL,
 	"product_id" text NOT NULL,
 	"user_id" text NOT NULL,
-	"rating" numeric NOT NULL,
+	"rating" numeric(3, 2) DEFAULT '0.00' NOT NULL,
 	"title" text,
 	"content" text,
 	"is_verified_purchase" boolean DEFAULT false,
@@ -100,7 +101,7 @@ CREATE TABLE "product_variants" (
 	"name" text NOT NULL,
 	"sku" text NOT NULL,
 	"barcode" text,
-	"price" numeric,
+	"price" numeric(12, 4) DEFAULT '0.0000',
 	"inventory" numeric(10, 0) DEFAULT '0',
 	"options" jsonb DEFAULT '{}'::jsonb,
 	"images" jsonb DEFAULT '[]'::jsonb,
@@ -120,27 +121,29 @@ CREATE TABLE "products" (
 	"sku" text NOT NULL,
 	"barcode" text,
 	"brand_id" text,
-	"price" numeric NOT NULL,
-	"cost_price" numeric,
-	"discount_price" numeric,
+	"price" numeric(12, 4) DEFAULT '0.0000' NOT NULL,
+	"cost_price" numeric(12, 4) DEFAULT '0.0000',
+	"discount_price" numeric(12, 4) DEFAULT '0.0000',
 	"discount_start" timestamp,
 	"discount_end" timestamp,
 	"inventory" numeric(10, 0) DEFAULT '0' NOT NULL,
 	"low_stock_threshold" numeric(10, 0) DEFAULT '5',
 	"sold_count" numeric(10, 0) DEFAULT '0' NOT NULL,
 	"category_id" text,
+	"subcategory_id" text,
 	"vendor_id" text,
 	"featured" boolean DEFAULT false NOT NULL,
 	"status" text DEFAULT 'draft' NOT NULL,
 	"images" jsonb DEFAULT '[]'::jsonb,
 	"tags" jsonb DEFAULT '[]'::jsonb,
+	"features" jsonb DEFAULT '[]'::jsonb,
 	"attributes" jsonb DEFAULT '{}'::jsonb,
-	"rating" numeric DEFAULT '0',
+	"rating" numeric(3, 2) DEFAULT '0.00',
 	"review_count" numeric(10, 0) DEFAULT '0',
 	"taxable" boolean DEFAULT true,
 	"tax_class" text DEFAULT 'standard',
-	"weight" numeric,
-	"dimensions" jsonb DEFAULT '{"length":0,"width":0,"height":0}'::jsonb,
+	"weight" numeric(10, 2) DEFAULT '0.00',
+	"dimensions" jsonb DEFAULT '{"length":"0.00","width":"0.00","height":"0.00"}'::jsonb,
 	"shipping_class" text DEFAULT 'standard',
 	"visibility" boolean DEFAULT true NOT NULL,
 	"is_digital" boolean DEFAULT false NOT NULL,
@@ -174,7 +177,7 @@ CREATE TABLE "vendors" (
 	"phone" text,
 	"address" jsonb DEFAULT '{}'::jsonb,
 	"status" text DEFAULT 'pending' NOT NULL,
-	"commission_rate" numeric DEFAULT '10',
+	"commission_rate" numeric(5, 2) DEFAULT '10.00',
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "vendors_slug_unique" UNIQUE("slug")
@@ -200,6 +203,17 @@ CREATE TABLE "settings" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "subcategories" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"slug" text NOT NULL,
+	"description" text,
+	"category_id" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "subcategories_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
@@ -221,9 +235,11 @@ ALTER TABLE "product_reviews" ADD CONSTRAINT "product_reviews_product_id_product
 ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_brand_id_brands_id_fk" FOREIGN KEY ("brand_id") REFERENCES "public"."brands"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_subcategory_id_subcategories_id_fk" FOREIGN KEY ("subcategory_id") REFERENCES "public"."subcategories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_vendor_id_vendors_id_fk" FOREIGN KEY ("vendor_id") REFERENCES "public"."vendors"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "related_products" ADD CONSTRAINT "related_products_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "related_products" ADD CONSTRAINT "related_products_related_product_id_products_id_fk" FOREIGN KEY ("related_product_id") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subcategories" ADD CONSTRAINT "subcategories_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "category_slug_idx" ON "categories" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "category_parent_idx" ON "categories" USING btree ("parent_id");--> statement-breakpoint
 CREATE INDEX "category_featured_idx" ON "categories" USING btree ("featured");--> statement-breakpoint
