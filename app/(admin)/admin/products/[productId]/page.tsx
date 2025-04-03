@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     productId: string;
-  };
+  }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -26,7 +26,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </Button>
       </div>
       <Separator />
-      <ProductForm productId={params.productId} />
+      <ProductForm productId={(await params).productId} />
     </div>
   );
 }

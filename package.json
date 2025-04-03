@@ -53,6 +53,7 @@
     "drizzle-admin": "0.0.6",
     "drizzle-orm": "0.38.4",
     "embla-carousel-react": "^8.5.2",
+    "fs": "^0.0.1-security",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.486.0",
     "mime": "4.0.6",

@@ -6,7 +6,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Trash, Plus, Minus, Copy, Tag, Calendar, Pencil } from "lucide-react";
+import {
+  Trash,
+  Plus,
+  Minus,
+  Copy,
+  Tag,
+  Calendar,
+  Pencil,
+  Upload,
+  Link,
+  Image as ImageIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
@@ -81,6 +92,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { uploadFile } from "@/lib/upload";
 
 // Product form schema
 const formSchema = z.object({
@@ -140,6 +152,7 @@ const formSchema = z.object({
   fileUrl: z.string().optional(),
   images: z.array(z.string()),
   tags: z.array(z.string()),
+  labels: z.array(z.string()).default([]),
   attributes: z
     .record(z.string(), z.union([z.string(), z.array(z.string())]))
     .optional(),
@@ -180,6 +193,8 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [isLoadingInitialData, setIsLoadingInitialData] = useState(false);
   const [editingVariant, setEditingVariant] = useState<any>(null);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [imageUploadLoading, setImageUploadLoading] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState("");
 
   const { createProduct, updateProduct, deleteProduct } = useProducts();
   const { data: initialData, isLoading: isLoadingProduct } = useProduct(
@@ -475,6 +490,43 @@ export function ProductForm({ productId }: ProductFormProps) {
       setLoading(false);
       setOpen(false);
     }
+  };
+
+  // Handle image file upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setImageUploadLoading(true);
+    try {
+      const currentImages = form.getValues("images") || [];
+      const newImages = [...currentImages];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type.startsWith("image/")) {
+          const fileUri = await uploadFile({ file, dir: "products" });
+          newImages.push(fileUri);
+        }
+      }
+
+      form.setValue("images", newImages);
+    } catch (error) {
+      console.error("Error uploading images:", error);
+      toast.error("Failed to upload images");
+    } finally {
+      setImageUploadLoading(false);
+    }
+  };
+
+  // Handle adding image URL
+  const handleAddImageUrl = () => {
+    if (!imageUrlInput.trim()) return;
+
+    const currentImages = form.getValues("images") || [];
+    const newImages = [...currentImages, imageUrlInput.trim()];
+    form.setValue("images", newImages);
+    setImageUrlInput("");
   };
 
   if (isEditing && !initialData) {
@@ -1047,25 +1099,117 @@ export function ProductForm({ productId }: ProductFormProps) {
                       name="images"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Image URLs</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              disabled={loading}
-                              placeholder="Enter image URLs (one per line)"
-                              value={(field.value || []).join("\n")}
-                              onChange={(e) => {
-                                const urls = e.target.value
-                                  .split("\n")
-                                  .filter(Boolean);
-                                field.onChange(urls);
-                              }}
-                              className="h-32"
-                            />
-                          </FormControl>
+                          <FormLabel>Product Images</FormLabel>
+
+                          {/* Image Upload Area */}
+                          <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center space-y-4">
+                            <div className="flex flex-col items-center justify-center text-center">
+                              <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
+                              <p className="text-sm font-medium">
+                                Upload product images
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Drag and drop images here, or click to select
+                                files
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-2 w-full max-w-md">
+                              <label htmlFor="image-upload" className="flex-1">
+                                <div className="flex items-center justify-center gap-2 h-10 px-4 py-2 border rounded-md cursor-pointer hover:bg-accent">
+                                  <Upload className="h-4 w-4" />
+                                  <span className="text-sm">Select Files</span>
+                                  <input
+                                    id="image-upload"
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleImageUpload}
+                                    disabled={imageUploadLoading}
+                                  />
+                                </div>
+                              </label>
+
+                              <div className="flex-1 flex gap-2">
+                                <Input
+                                  placeholder="Or paste image URL"
+                                  value={imageUrlInput}
+                                  onChange={(e) =>
+                                    setImageUrlInput(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleAddImageUrl();
+                                    }
+                                  }}
+                                  disabled={imageUploadLoading}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={handleAddImageUrl}
+                                  disabled={
+                                    !imageUrlInput.trim() || imageUploadLoading
+                                  }
+                                >
+                                  <Link className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
                           <FormDescription>
-                            Enter each image URL on a new line
+                            Upload product images or add image URLs. You can add
+                            multiple images.
                           </FormDescription>
                           <FormMessage />
+
+                          {/* Display preview of images */}
+                          {field.value && field.value.length > 0 && (
+                            <div className="mt-4">
+                              <FormLabel>Image Preview</FormLabel>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                {field.value.map(
+                                  (url: string, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="relative aspect-square border rounded-md overflow-hidden group"
+                                    >
+                                      <img
+                                        src={url}
+                                        alt={`Product image ${index + 1}`}
+                                        className="object-cover w-full h-full"
+                                        onError={(e) => {
+                                          const target =
+                                            e.target as HTMLImageElement;
+                                          target.src =
+                                            "https://via.placeholder.com/300x300?text=Invalid+Image";
+                                        }}
+                                      />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <Button
+                                          type="button"
+                                          variant="destructive"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            const newImages = [...field.value];
+                                            newImages.splice(index, 1);
+                                            field.onChange(newImages);
+                                          }}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </FormItem>
                       )}
                     />
@@ -1564,16 +1708,60 @@ export function ProductForm({ productId }: ProductFormProps) {
                               onChange={(e) => {
                                 const urls = e.target.value
                                   .split("\n")
-                                  .filter(Boolean);
+                                  .filter(Boolean)
+                                  .map((url) => url.trim());
                                 field.onChange(urls);
                               }}
                               className="h-32"
                             />
                           </FormControl>
                           <FormDescription>
-                            Enter each image URL on a new line
+                            Enter each image URL on a new line. You can add
+                            multiple images.
                           </FormDescription>
                           <FormMessage />
+
+                          {/* Display preview of images */}
+                          {field.value && field.value.length > 0 && (
+                            <div className="mt-4">
+                              <FormLabel>Image Preview</FormLabel>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                                {field.value.map(
+                                  (url: string, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="relative aspect-square border rounded-md overflow-hidden"
+                                    >
+                                      <img
+                                        src={url}
+                                        alt={`Product image ${index + 1}`}
+                                        className="object-cover w-full h-full"
+                                        onError={(e) => {
+                                          const target =
+                                            e.target as HTMLImageElement;
+                                          target.src =
+                                            "https://via.placeholder.com/300x300?text=Invalid+Image";
+                                        }}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-1 right-1 h-6 w-6"
+                                        onClick={() => {
+                                          const newImages = [...field.value];
+                                          newImages.splice(index, 1);
+                                          field.onChange(newImages);
+                                        }}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </FormItem>
                       )}
                     />
@@ -1662,11 +1850,14 @@ export function ProductForm({ productId }: ProductFormProps) {
                                         )
                                           ? [...field.value]
                                           : [];
+
                                         if (checked) {
-                                          field.onChange([
-                                            ...currentLabels,
-                                            label,
-                                          ]);
+                                          if (!currentLabels.includes(label)) {
+                                            field.onChange([
+                                              ...currentLabels,
+                                              label,
+                                            ]);
+                                          }
                                         } else {
                                           field.onChange(
                                             currentLabels.filter(
