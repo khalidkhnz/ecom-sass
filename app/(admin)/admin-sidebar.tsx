@@ -20,7 +20,8 @@ import {
   Store,
 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
-
+import { ThemeToggle } from "@/components/theme-toggle";
+import { cn } from "@/lib/utils";
 interface AdminSidebarProps {
   user: User;
 }
@@ -83,7 +84,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
     <div
       className={`${
         collapsed ? "w-20" : "w-64"
-      } transition-all duration-300 bg-sidebar-primary-foreground border-r border-gray-200 flex flex-col h-screen sticky top-0`}
+      } transition-all duration-300 bg-background border-r border-gray-200 flex flex-col h-screen sticky top-0`}
     >
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!collapsed && !isLoading && (
@@ -123,6 +124,20 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
             </Link>
           ))}
         </nav>
+      </div>
+
+      <div
+        className={cn("p-4 flex justify-start items-center gap-2", {
+          "justify-center": collapsed,
+        })}
+      >
+        <ThemeToggle directToggle={true} />
+        {!collapsed && (
+          <>
+            <span className="dark:hidden">LIGHT MODE</span>
+            <span className="hidden dark:block">DARK MODE</span>
+          </>
+        )}
       </div>
 
       <div className="p-4 border-t border-gray-200">
