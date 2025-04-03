@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Product } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowRight, ShoppingCart, Heart } from "lucide-react";
+import { getProducts } from "@/app/actions/products";
 
 interface ProductShowcaseProps {
   title: string;
-  products: Product[];
+  products: Awaited<ReturnType<typeof getProducts>>;
   viewAllLink?: string;
 }
 
@@ -46,7 +46,11 @@ export function ProductShowcase({
   );
 }
 
-function ProductCard({ product }: { product: Product }) {
+function ProductCard({
+  product,
+}: {
+  product: Awaited<ReturnType<typeof getProducts>>[number];
+}) {
   const productImage =
     product.images && product.images.length > 0
       ? product.images[0]
@@ -68,7 +72,7 @@ function ProductCard({ product }: { product: Product }) {
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
         />
-        {product.status === "active" && product.inventory <= 0 && (
+        {product.status === "active" && Number(product.inventory) <= 0 && (
           <Badge variant="destructive" className="absolute top-2 left-2">
             Sold Out
           </Badge>
@@ -112,7 +116,11 @@ function ProductCard({ product }: { product: Product }) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-2">
-        <Button className="flex-1" size="sm" disabled={product.inventory <= 0}>
+        <Button
+          className="flex-1"
+          size="sm"
+          disabled={Number(product.inventory) <= 0}
+        >
           <ShoppingCart className="mr-2 h-4 w-4" />
           Add to Cart
         </Button>

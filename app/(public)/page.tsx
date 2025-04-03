@@ -4,46 +4,10 @@ import { ProductShowcase } from "@/components/product-showcase";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import { getProducts } from "@/app/actions/products";
-import { Product } from "@/hooks/useProducts";
 
 export default async function HomePage() {
   // Get products data
-  const productsData = await getProducts();
-
-  // Convert to match Product interface
-  const products = productsData.map((p) => ({
-    ...p,
-    tags: p.tags || [],
-    images: p.images || [],
-    barcode: null,
-    costPrice: null,
-    discountStart: null,
-    discountEnd: null,
-    soldCount: 0,
-    vendorId: null,
-    features: [],
-    attributes: {},
-    reviewCount: 0,
-    taxable: true,
-    taxClass: null,
-    weight: null,
-    dimensions: null,
-    shippingClass: null,
-    visibility: true,
-    isDigital: false,
-    fileUrl: null,
-    labels: [],
-    metaTitle: null,
-    metaDescription: null,
-    updatedAt: p.createdAt,
-    // Convert string fields to numbers
-    inventory: Number(p.inventory),
-    lowStockThreshold: Number(p.lowStockThreshold),
-    price: String(p.price),
-    discountPrice: p.discountPrice ? String(p.discountPrice) : null,
-    actualPrice: String(p.actualPrice),
-    rating: Number(p.rating || 0),
-  })) as Product[];
+  const products = await getProducts();
 
   // Filter for featured products
   const featuredProducts = products.filter((product) => product.featured);
