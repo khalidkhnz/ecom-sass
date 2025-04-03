@@ -15,6 +15,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { ThemeToggle } from "./theme-toggle";
 
 const categories = [
   { name: "Clothing", slug: "clothing" },
@@ -129,6 +130,7 @@ export function Navbar() {
                 0
               </span>
             </Button>
+            <ThemeToggle />
           </div>
         </div>
       </Container>
