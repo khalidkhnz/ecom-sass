@@ -195,6 +195,8 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState("");
+  const [attributeName, setAttributeName] = useState("");
+  const [attributeValue, setAttributeValue] = useState("");
 
   const { createProduct, updateProduct, deleteProduct } = useProducts();
   const { data: initialData, isLoading: isLoadingProduct } = useProduct(
@@ -1644,42 +1646,129 @@ export function ProductForm({ productId }: ProductFormProps) {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Attributes</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              disabled={loading}
-                              placeholder="Enter attributes (one per line)"
-                              value={Object.entries(field.value || {})
-                                .map(
-                                  ([key, value]) =>
-                                    `${key}: ${
-                                      Array.isArray(value)
-                                        ? value.join(", ")
-                                        : value
-                                    }`
-                                )
-                                .join("\n")}
-                              onChange={(e) => {
-                                const attributes = e.target.value
-                                  .split("\n")
-                                  .filter(Boolean)
-                                  .reduce((acc, line) => {
-                                    const [key, value] = line
-                                      .split(":")
-                                      .map((part) => part.trim());
-                                    if (key && value) {
-                                      acc[key] = value.includes(",")
-                                        ? value.split(",").map((v) => v.trim())
-                                        : value;
+                          <div className="space-y-4">
+                            {/* Display existing attributes */}
+                            {field.value &&
+                              Object.keys(field.value).length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="text-sm font-medium">
+                                    Current Attributes
+                                  </div>
+                                  <div className="grid gap-2">
+                                    {Object.entries(field.value).map(
+                                      ([key, value], index) => (
+                                        <div
+                                          key={index}
+                                          className="flex items-center gap-2 p-2 border rounded-md"
+                                        >
+                                          <div className="flex-1">
+                                            <div className="font-medium">
+                                              {key}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                              {Array.isArray(value)
+                                                ? value.join(", ")
+                                                : value}
+                                            </div>
+                                          </div>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                              const newAttributes = {
+                                                ...field.value,
+                                              };
+                                              delete newAttributes[key];
+                                              field.onChange(newAttributes);
+                                            }}
+                                          >
+                                            <Trash className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* Add new attribute */}
+                            <div className="space-y-2">
+                              <div className="text-sm font-medium">
+                                Add New Attribute
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <Input
+                                  placeholder="Attribute name (e.g., Color, Size)"
+                                  value={attributeName}
+                                  onChange={(e) =>
+                                    setAttributeName(e.target.value)
+                                  }
+                                />
+                                <Input
+                                  placeholder="Attribute value (e.g., Red, XL)"
+                                  value={attributeValue}
+                                  onChange={(e) =>
+                                    setAttributeValue(e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="flex justify-end">
+                                <Button
+                                  type="button"
+                                  onClick={() => {
+                                    if (attributeName && attributeValue) {
+                                      const currentAttributes =
+                                        field.value || {};
+                                      const newAttributes = {
+                                        ...currentAttributes,
+                                      };
+
+                                      // Check if the attribute already exists
+                                      if (newAttributes[attributeName]) {
+                                        // If it's an array, add to it
+                                        if (
+                                          Array.isArray(
+                                            newAttributes[attributeName]
+                                          )
+                                        ) {
+                                          if (
+                                            !newAttributes[
+                                              attributeName
+                                            ].includes(attributeValue)
+                                          ) {
+                                            newAttributes[attributeName] = [
+                                              ...newAttributes[attributeName],
+                                              attributeValue,
+                                            ];
+                                          }
+                                        } else {
+                                          // Convert to array if it's not already
+                                          newAttributes[attributeName] = [
+                                            newAttributes[attributeName],
+                                            attributeValue,
+                                          ];
+                                        }
+                                      } else {
+                                        // Create new attribute
+                                        newAttributes[attributeName] =
+                                          attributeValue;
+                                      }
+
+                                      field.onChange(newAttributes);
+                                      setAttributeName("");
+                                      setAttributeValue("");
                                     }
-                                    return acc;
-                                  }, {} as Record<string, string | string[]>);
-                                field.onChange(attributes);
-                              }}
-                              className="h-32"
-                            />
-                          </FormControl>
+                                  }}
+                                >
+                                  Add Attribute
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
                           <FormDescription>
-                            Enter each attribute as "key: value" on a new line
+                            Add product attributes like color, size, material,
+                            etc.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
