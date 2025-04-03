@@ -30,6 +30,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { CustomFormSelectField } from "@/components/custom-form-field";
 
 export default function PricingAndInventoryForm({
   form,
@@ -250,34 +251,23 @@ export default function PricingAndInventoryForm({
       <div className="space-y-6">
         <div className="space-y-4">
           <Heading title="Visibility & Status" size="sm" />
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  disabled={loading}
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select product status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Control whether this product is visible to customers
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={loading}
+            label="Status"
+            placeholder="Select product status"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+            }}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
+            options={[
+              { id: "draft", name: "Draft" },
+              { id: "active", name: "Active" },
+              { id: "archived", name: "Archived" },
+            ]}
+            description="Control whether this product is visible to customers"
           />
           <FormField
             control={form.control}

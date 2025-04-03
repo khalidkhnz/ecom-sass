@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -35,6 +36,7 @@ const CustomFormSelectField = <T extends Record<string, any>>({
   searchTerm,
   onSearchTermChange,
   popoverClassName,
+  description,
 }: {
   form: UseFormReturn<T>;
   disabled?: boolean;
@@ -52,6 +54,7 @@ const CustomFormSelectField = <T extends Record<string, any>>({
   searchTerm?: string;
   onSearchTermChange?: (value: string) => void;
   popoverClassName?: string;
+  description?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const [internalSearchTerm, setInternalSearchTerm] = useState(
@@ -152,6 +155,7 @@ const CustomFormSelectField = <T extends Record<string, any>>({
               </Command>
             </PopoverContent>
           </Popover>
+          <FormDescription>{description}</FormDescription>
           <FormMessage />
         </FormItem>
       )}

@@ -96,7 +96,8 @@ export default function AttributesAndCategories({
             searchPlaceholder="Search for a category"
             searchTerm={searchTerm}
             onSearchTermChange={handleSearchChange}
-            popoverClassName="max-h-[300px]"
+            popoverClassName="max-h-[500px] min-w-[500px]"
+            triggerClassName="max-w-[500px] min-w-[500px]"
           />
 
           <CustomFormSelectField
@@ -114,6 +115,8 @@ export default function AttributesAndCategories({
               id: subcategory.id,
               name: subcategory.name,
             }))}
+            popoverClassName="max-h-[500px] min-w-[500px]"
+            triggerClassName="max-w-[500px] min-w-[500px]"
           />
 
           <CustomFormSelectField
@@ -129,6 +132,8 @@ export default function AttributesAndCategories({
               id: brand.id,
               name: brand.name,
             }))}
+            popoverClassName="max-h-[500px] min-w-[500px]"
+            triggerClassName="max-w-[500px] min-w-[500px]"
           />
 
           <CustomFormSelectField
@@ -144,6 +149,8 @@ export default function AttributesAndCategories({
               id: vendor.id,
               name: vendor.name,
             }))}
+            popoverClassName="max-h-[500px] min-w-[500px]"
+            triggerClassName="max-w-[500px] min-w-[500px]"
           />
         </div>
       </div>

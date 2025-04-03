@@ -9,7 +9,6 @@ import { FormItem } from "@/components/ui/form";
 import { FormField } from "@/components/ui/form";
 import { Heading } from "@/components/ui/heading";
 import { Category } from "@/schema/categories";
-import { Brand, Vendor } from "@/schema/products";
 import { Textarea } from "@/components/ui/textarea";
 import { UseFormReturn } from "react-hook-form";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImagesUploader from "./images-uploader";
 import { FormValues, SubcategoryArray } from "./product-form";
@@ -491,34 +483,23 @@ export default function BasicInfoForm({
       <div className="space-y-6">
         <div className="space-y-4">
           <Heading title="Visibility & Status" size="sm" />
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select
-                  disabled={loading}
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select product status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Control whether this product is visible to customers
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={loading}
+            label="Status"
+            placeholder="Select product status"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+            }}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
+            options={[
+              { id: "draft", name: "Draft" },
+              { id: "active", name: "Active" },
+              { id: "archived", name: "Archived" },
+            ]}
+            description="Control whether this product is visible to customers"
           />
           <FormField
             control={form.control}
@@ -557,6 +538,8 @@ export default function BasicInfoForm({
               id: category.id,
               name: category.name,
             }))}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
           />
 
           <CustomFormSelectField
@@ -574,6 +557,8 @@ export default function BasicInfoForm({
               id: subcategory.id,
               name: subcategory.name,
             }))}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
           />
 
           <CustomFormSelectField
@@ -589,6 +574,8 @@ export default function BasicInfoForm({
               id: brand.id,
               name: brand.name,
             }))}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
           />
 
           <CustomFormSelectField
@@ -604,6 +591,8 @@ export default function BasicInfoForm({
               id: vendor.id,
               name: vendor.name,
             }))}
+            popoverClassName="max-h-[300px] min-w-[300px]"
+            triggerClassName="max-w-[300px] min-w-[300px]"
           />
         </div>
 
