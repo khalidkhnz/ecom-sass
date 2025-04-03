@@ -23,9 +23,17 @@ const categorySchema = z.object({
 export type CategoryFormValues = z.infer<typeof categorySchema>;
 
 // Get all categories
-export async function getCategories() {
+export async function getCategories(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   try {
-    const allCategories = await db
+    const { search, page = 1, limit = 10 } = params || {};
+    const offset = (page - 1) * limit;
+
+    // Build the query
+    const queryBuilder = db
       .select({
         id: categories.id,
         name: categories.name,
@@ -34,8 +42,37 @@ export async function getCategories() {
         createdAt: categories.createdAt,
         updatedAt: categories.updatedAt,
       })
-      .from(categories)
-      .orderBy(categories.name);
+      .from(categories);
+
+    // Apply search filter if provided
+    const filteredQuery = search
+      ? queryBuilder.where(
+          sql`(${categories.name} LIKE ${`%${search}%`} OR ${
+            categories.slug
+          } LIKE ${`%${search}%`})`
+        )
+      : queryBuilder;
+
+    // Get total count for pagination
+    const countQuery = search
+      ? db
+          .select({ count: sql<number>`count(*)` })
+          .from(categories)
+          .where(
+            sql`(${categories.name} LIKE ${`%${search}%`} OR ${
+              categories.slug
+            } LIKE ${`%${search}%`})`
+          )
+      : db.select({ count: sql<number>`count(*)` }).from(categories);
+
+    const [{ count }] = await countQuery;
+    const totalPages = Math.ceil(count / limit);
+
+    // Apply pagination
+    const allCategories = await filteredQuery
+      .orderBy(categories.name)
+      .limit(limit)
+      .offset(offset);
 
     // Get product counts for each category
     const productCounts = await db
@@ -63,7 +100,15 @@ export async function getCategories() {
       productCount: productCountMap[category.id] || 0,
     }));
 
-    return { data };
+    return {
+      data,
+      pagination: {
+        total: count,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    };
   } catch (error) {
     console.error("Error fetching categories:", error);
     return { error: "Failed to fetch categories" };

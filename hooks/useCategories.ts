@@ -12,20 +12,25 @@ import { toast } from "sonner";
 export const categoryKeys = {
   all: ["categories"] as const,
   lists: () => [...categoryKeys.all, "list"] as const,
-  list: (filters: string) => [...categoryKeys.lists(), { filters }] as const,
+  list: (filters: { search?: string; page?: number; limit?: number }) =>
+    [...categoryKeys.lists(), filters] as const,
   details: () => [...categoryKeys.all, "detail"] as const,
   detail: (id: string) => [...categoryKeys.details(), id] as const,
 };
 
-export function useCategories() {
+export function useCategories(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   const queryClient = useQueryClient();
 
   const categoriesQuery = useQuery({
-    queryKey: categoryKeys.lists(),
+    queryKey: categoryKeys.list(params || {}),
     queryFn: async () => {
-      const result = await getCategories();
+      const result = await getCategories(params);
       if (result.error) throw new Error(result.error);
-      return result.data;
+      return result;
     },
   });
 
@@ -76,7 +81,8 @@ export function useCategories() {
   });
 
   return {
-    categories: categoriesQuery.data || [],
+    categories: categoriesQuery.data?.data || [],
+    pagination: categoriesQuery.data?.pagination,
     isLoading: categoriesQuery.isLoading,
     isError: categoriesQuery.isError,
     error: categoriesQuery.error,
