@@ -35,6 +35,7 @@ import ImagesUploader from "./images-uploader";
 import { FormValues, SubcategoryArray } from "./product-form";
 import { getBrands } from "@/app/actions/brands";
 import { getVendors } from "@/app/actions/vendors";
+import { CustomFormSelectField } from "@/components/custom-form-field";
 
 export default function BasicInfoForm({
   form,
@@ -542,127 +543,67 @@ export default function BasicInfoForm({
         </div>
 
         <div className="space-y-4">
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="categoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select
-                  disabled={loading || isLoadingCategories}
-                  onValueChange={(...props) => {
-                    field.onChange(...props);
-                    form.setValue("subcategoryId", "");
-                  }}
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories?.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={loading || isLoadingCategories}
+            label="Category"
+            placeholder="Select a category"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+              form.setValue("subcategoryId", "");
+            }}
+            options={categories?.map((category) => ({
+              id: category.id,
+              name: category.name,
+            }))}
           />
 
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="subcategoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subcategory</FormLabel>
-                <Select
-                  disabled={
-                    loading ||
-                    isLoadingSubcategories ||
-                    subcategories?.length === 0
-                  }
-                  onValueChange={field.onChange}
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select a subcategory" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {subcategories?.map((subcategory) => (
-                      <SelectItem key={subcategory.id} value={subcategory.id}>
-                        {subcategory.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={
+              loading || isLoadingSubcategories || subcategories?.length === 0
+            }
+            label="Subcategory"
+            placeholder="Select a category"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+            }}
+            options={(subcategories || [])?.map((subcategory) => ({
+              id: subcategory.id,
+              name: subcategory.name,
+            }))}
           />
 
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="brandId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Brand</FormLabel>
-                <Select
-                  disabled={loading || isLoadingBrands}
-                  onValueChange={field.onChange}
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select a brand" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {brands?.map((brand) => (
-                      <SelectItem key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={loading || isLoadingBrands}
+            label="Brand"
+            placeholder="Select a brand"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+            }}
+            options={(brands || [])?.map((brand) => ({
+              id: brand.id,
+              name: brand.name,
+            }))}
           />
 
-          <FormField
-            control={form.control}
+          <CustomFormSelectField
+            form={form}
             name="vendorId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Vendor</FormLabel>
-                <Select
-                  disabled={loading || isLoadingVendors}
-                  onValueChange={field.onChange}
-                  value={field.value || ""}
-                >
-                  <FormControl>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select a vendor" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {vendors?.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            disabled={loading || isLoadingVendors}
+            label="Vendor"
+            placeholder="Select a vendor"
+            onValueChange={(field, val) => {
+              field.onChange(val);
+            }}
+            options={(vendors || [])?.map((vendor) => ({
+              id: vendor.id,
+              name: vendor.name,
+            }))}
           />
         </div>
 
