@@ -158,6 +158,14 @@ async function ProductDetails({ productId }: { productId: string }) {
                     {product.category.name}
                   </Badge>
                 )}
+                {product.subcategory && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs text-muted-foreground"
+                  >
+                    {product.subcategory.name}
+                  </Badge>
+                )}
                 {product.brand && (
                   <Badge
                     variant="outline"

@@ -3,13 +3,13 @@ import { getVendorById } from "@/app/actions/vendors";
 import { VendorForm } from "../vendor-form";
 
 interface VendorPageProps {
-  params: {
-    vendorId: string;
-  };
+  params: Promise<{ vendorId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function VendorPage({ params }: VendorPageProps) {
-  const vendor = await getVendorById(params.vendorId);
+  const { vendorId } = await params;
+  const vendor = await getVendorById(vendorId);
 
   if (!vendor) {
     notFound();

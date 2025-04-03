@@ -1,0 +1,1 @@
+ALTER TABLE "products" ALTER COLUMN "dimensions" SET DEFAULT '{"length":"0","width":"0","height":"0"}'::jsonb;

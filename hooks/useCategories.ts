@@ -22,7 +22,11 @@ export function useCategories() {
 
   const categoriesQuery = useQuery({
     queryKey: categoryKeys.lists(),
-    queryFn: () => getCategories(),
+    queryFn: async () => {
+      const result = await getCategories();
+      if (result.error) throw new Error(result.error);
+      return result.data;
+    },
   });
 
   const createCategoryMutation = useMutation({

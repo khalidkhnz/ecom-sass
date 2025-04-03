@@ -32,6 +32,7 @@ export async function getCategories() {
         slug: categories.slug,
         description: categories.description,
         createdAt: categories.createdAt,
+        updatedAt: categories.updatedAt,
       })
       .from(categories)
       .orderBy(categories.name);
@@ -57,13 +58,15 @@ export async function getCategories() {
     );
 
     // Combine the data
-    return allCategories.map((category) => ({
+    const data = allCategories.map((category) => ({
       ...category,
       productCount: productCountMap[category.id] || 0,
     }));
+
+    return { data };
   } catch (error) {
     console.error("Error fetching categories:", error);
-    throw new Error("Failed to fetch categories");
+    return { error: "Failed to fetch categories" };
   }
 }
 

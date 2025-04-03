@@ -4,11 +4,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
-export default function EditCategoryPage({
+export default async function EditCategoryPage({
   params,
 }: {
-  params: { categoryId: string };
+  params: Promise<{ categoryId: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const { categoryId } = await params;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -27,7 +30,7 @@ export default function EditCategoryPage({
       </div>
       <Separator />
       <div className="max-w-2xl">
-        <CategoryForm categoryId={params.categoryId} />
+        <CategoryForm categoryId={categoryId} />
       </div>
     </div>
   );

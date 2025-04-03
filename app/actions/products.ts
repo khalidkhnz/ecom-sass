@@ -47,6 +47,7 @@ const productSchema = z.object({
     })
     .optional(),
   categoryId: z.string().optional().nullable(),
+  subcategoryId: z.string().optional().nullable(),
   brandId: z.string().optional().nullable(),
   vendorId: z.string().optional().nullable(),
   status: z.enum(["draft", "active", "archived"]).default("draft"),
@@ -324,6 +325,7 @@ export async function createProduct(data: ProductFormValues) {
         ? String(validatedData.lowStockThreshold)
         : "5",
       categoryId: validatedData.categoryId || null,
+      subcategoryId: validatedData.subcategoryId || null,
       brandId: validatedData.brandId || null,
       vendorId: validatedData.vendorId || null,
       status: validatedData.status,
@@ -452,6 +454,7 @@ export async function updateProduct(id: string, data: ProductFormValues) {
           ? String(validatedData.lowStockThreshold)
           : "5",
         categoryId: validatedData.categoryId || null,
+        subcategoryId: validatedData.subcategoryId || null,
         brandId: validatedData.brandId || null,
         vendorId: validatedData.vendorId || null,
         status: validatedData.status,

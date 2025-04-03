@@ -11,7 +11,8 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { createId } from "@paralleldrive/cuid2";
-import { relations, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import { subcategories } from "./subcategories";
 
 // Define product status and other enums
 export const productStatusEnum = pgEnum("product_status", [
@@ -76,7 +77,10 @@ export const vendors = pgTable(
     phone: text(),
     address: jsonb().default({}),
     status: text().default("pending").notNull(), // pending, active, suspended
-    commissionRate: numeric(5, 2).default("10"), // Default 10% commission
+    commissionRate: numeric("commission_rate", {
+      precision: 5,
+      scale: 2,
+    }).default("10.00"), // Default 10% commission
     createdAt: timestamp().notNull().defaultNow(),
     updatedAt: timestamp()
       .notNull()
@@ -130,9 +134,16 @@ export const products = pgTable(
     sku: text().notNull().unique(), // Unique SKU for tracking
     barcode: text().unique(), // Barcode for inventory/POS
     brandId: text().references(() => brands.id, { onDelete: "set null" }),
-    price: numeric(12, 4).notNull(),
-    costPrice: numeric(12, 4), // Cost price for profit calculation
-    discountPrice: numeric(12, 4), // Optional discount price
+    price: numeric("price", { precision: 12, scale: 4 })
+      .notNull()
+      .default("0.0000"),
+    costPrice: numeric("cost_price", { precision: 12, scale: 4 }).default(
+      "0.0000"
+    ),
+    discountPrice: numeric("discount_price", {
+      precision: 12,
+      scale: 4,
+    }).default("0.0000"),
     discountStart: timestamp(),
     discountEnd: timestamp(),
     inventory: numeric("inventory", { precision: 10, scale: 0 })
@@ -146,6 +157,7 @@ export const products = pgTable(
       .notNull()
       .default("0"),
     categoryId: text().references(() => categories.id, { onDelete: "cascade" }),
+    subcategoryId: text().references(() => subcategories.id),
     vendorId: text().references(() => vendors.id, { onDelete: "cascade" }), // Multi-vendor support
     featured: boolean().notNull().default(false),
     status: text().notNull().default("draft"),
@@ -153,14 +165,18 @@ export const products = pgTable(
     tags: jsonb().$type<string[]>().default([]),
     features: jsonb().$type<string[]>().default([]), // Product features
     attributes: jsonb().default({}), // For color, size, material, etc.
-    rating: numeric(3, 2).default("0"), // Average rating (0-5)
+    rating: numeric("rating", { precision: 3, scale: 2 }).default("0.00"),
     reviewCount: numeric("review_count", { precision: 10, scale: 0 }).default(
       "0"
     ),
     taxable: boolean().default(true),
     taxClass: text().default("standard"),
-    weight: numeric(10, 2), // For shipping calculations
-    dimensions: jsonb().default({ length: 0, width: 0, height: 0 }), // JSONB for flexible storage
+    weight: numeric("weight", { precision: 10, scale: 2 }).default("0.00"),
+    dimensions: jsonb().default({
+      length: "0.00",
+      width: "0.00",
+      height: "0.00",
+    }),
     shippingClass: text().default("standard"),
     visibility: boolean().notNull().default(true), // Public or hidden
     isDigital: boolean().notNull().default(false), // True for digital products
@@ -199,7 +215,7 @@ export const productVariants = pgTable(
     name: text().notNull(), // E.g., "Small", "Red", etc.
     sku: text().notNull().unique(),
     barcode: text().unique(),
-    price: numeric(12, 4), // Override product price for this variant
+    price: numeric("price", { precision: 12, scale: 4 }).default("0.0000"),
     inventory: numeric("inventory", { precision: 10, scale: 0 }).default("0"),
     options: jsonb().default({}), // { size: "S", color: "Red" }
     images: jsonb().$type<string[]>().default([]),
@@ -227,7 +243,9 @@ export const productReviews = pgTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
     userId: text().notNull(), // User who left the review
-    rating: numeric(3, 2).notNull(), // 0.00 - 5.00
+    rating: numeric("rating", { precision: 3, scale: 2 })
+      .notNull()
+      .default("0.00"),
     title: text(), // Optional review title
     content: text(), // Review text
     isVerifiedPurchase: boolean().default(false),
@@ -261,7 +279,9 @@ export const inventoryTransactions = pgTable(
     variantId: text().references(() => productVariants.id, {
       onDelete: "cascade",
     }),
-    quantity: numeric("quantity", { precision: 10, scale: 0 }).notNull(),
+    quantity: numeric("quantity", { precision: 10, scale: 0 })
+      .notNull()
+      .default("0"),
     type: text().notNull(), // purchase, sale, adjustment, return, etc.
     reference: text(), // Order ID, purchase order number, etc.
     notes: text(),
@@ -302,78 +322,6 @@ export const relatedProducts = pgTable(
   })
 );
 
-// Define relationships
-export const categoriesRelations = relations(categories, ({ one, many }) => ({
-  parent: one(categories, {
-    fields: [categories.parentId],
-    references: [categories.id],
-    relationName: "category_parent",
-  }),
-  children: many(categories, {
-    relationName: "category_parent",
-  }),
-  products: many(products),
-}));
-
-export const productsRelations = relations(products, ({ one, many }) => ({
-  category: one(categories, {
-    fields: [products.categoryId],
-    references: [categories.id],
-  }),
-  brand: one(brands, {
-    fields: [products.brandId],
-    references: [brands.id],
-  }),
-  vendor: one(vendors, {
-    fields: [products.vendorId],
-    references: [vendors.id],
-  }),
-  variants: many(productVariants),
-  reviews: many(productReviews),
-  inventoryTransactions: many(inventoryTransactions),
-  relatedToProducts: many(relatedProducts, {
-    relationName: "productRelations",
-  }),
-  relatedFromProducts: many(relatedProducts, {
-    relationName: "relatedProductRelations",
-  }),
-}));
-
-export const productVariantsRelations = relations(
-  productVariants,
-  ({ one }) => ({
-    product: one(products, {
-      fields: [productVariants.productId],
-      references: [products.id],
-    }),
-  })
-);
-
-export const productReviewsRelations = relations(productReviews, ({ one }) => ({
-  product: one(products, {
-    fields: [productReviews.productId],
-    references: [products.id],
-  }),
-}));
-
-export const relatedProductsRelations = relations(
-  relatedProducts,
-  ({ one }) => ({
-    product: one(products, {
-      fields: [relatedProducts.productId],
-      references: [products.id],
-      relationName: "productRelations",
-    }),
-    relatedProduct: one(products, {
-      fields: [relatedProducts.relatedProductId],
-      references: [products.id],
-      relationName: "relatedProductRelations",
-    }),
-  })
-);
-
-export type Category = typeof categories.$inferSelect;
-export type NewCategory = typeof categories.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type ProductVariant = typeof productVariants.$inferSelect;

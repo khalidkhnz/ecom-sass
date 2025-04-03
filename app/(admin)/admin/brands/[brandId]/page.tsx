@@ -8,13 +8,13 @@ export const metadata = {
 };
 
 interface BrandEditPageProps {
-  params: {
-    brandId: string;
-  };
+  params: Promise<{ brandId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function BrandEditPage({ params }: BrandEditPageProps) {
-  const brand = await getBrandById(params.brandId);
+  const { brandId } = await params;
+  const brand = await getBrandById(brandId);
 
   if (!brand) {
     notFound();

@@ -35,9 +35,10 @@ interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
+  description: string | null;
   productCount: number;
-  createdAt: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export function CategoryTable() {
@@ -106,7 +107,9 @@ export function CategoryTable() {
                   <TableCell className="text-center">
                     {category.productCount}
                   </TableCell>
-                  <TableCell>{formatDate(category.createdAt)}</TableCell>
+                  <TableCell>
+                    {formatDate(category.createdAt.toISOString())}
+                  </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

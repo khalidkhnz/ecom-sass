@@ -19,11 +19,14 @@ import { Button } from "@/components/ui/button";
 import { Heart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 
+interface ProductsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
 export default async function ProductsPage({
   searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+}: ProductsPageProps) {
+  const resolvedSearchParams = await searchParams;
   return (
     <div className="py-10">
       <Container>
@@ -37,7 +40,7 @@ export default async function ProductsPage({
         </div>
         <Separator className="my-6" />
         <Suspense fallback={<ProductsLoading />}>
-          <ProductsList searchParams={searchParams} />
+          <ProductsList searchParams={resolvedSearchParams} />
         </Suspense>
       </Container>
     </div>
@@ -49,217 +52,161 @@ async function ProductsList({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const [productsData, categories] = await Promise.all([
-    getProducts(),
-    getCategories(),
-  ]);
+  const { data: categories } = await getCategories();
+  const productsData = await getProducts();
 
-  // Convert to match Product interface
-  const allProducts = productsData.map((p) => ({
+  // Convert products to match the Product interface
+  const products = productsData.map((p) => ({
     ...p,
+    inventory: Number(p.inventory),
+    price: p.price,
+    discountPrice: p.discountPrice,
+    lowStockThreshold: Number(p.lowStockThreshold),
+    rating: Number(p.rating),
     tags: p.tags || [],
     images: p.images || [],
-  })) as unknown as Product[];
+    // Add missing required fields with default values
+    barcode: null,
+    costPrice: null,
+    discountStart: null,
+    discountEnd: null,
+    soldCount: 0,
+    status: "draft",
+    featured: false,
+    categoryId: p.categoryId || null,
+    vendorId: null,
+    features: [],
+    attributes: {},
+    reviewCount: 0,
+    taxable: true,
+    taxClass: "standard",
+    weight: null,
+    dimensions: { length: 0, width: 0, height: 0 },
+    shippingClass: "standard",
+    visibility: true,
+    isDigital: false,
+    fileUrl: null,
+    labels: [],
+    metaTitle: null,
+    metaDescription: null,
+    updatedAt: p.createdAt,
+  })) as Product[];
 
-  // Filtering logic
-  const categoryId = searchParams.category as string | undefined;
-  const sort = searchParams.sort as string | undefined;
-  const searchQuery = searchParams.search as string | undefined;
-  const inStockOnly = searchParams.inStock === "true";
+  const createQueryString = (params: Record<string, string | null>) => {
+    const newSearchParams = new URLSearchParams(searchParams?.toString() || "");
+    for (const [key, value] of Object.entries(params)) {
+      if (value === null) {
+        newSearchParams.delete(key);
+      } else {
+        newSearchParams.set(key, value);
+      }
+    }
+    return newSearchParams.toString();
+  };
 
-  let filteredProducts = [...allProducts];
+  const category = searchParams?.category?.toString();
+  const query = searchParams?.query?.toString();
+  const inStock = searchParams?.inStock?.toString();
+  const sort = searchParams?.sort?.toString();
 
-  // Filter by category
-  if (categoryId) {
+  let filteredProducts = [...products];
+
+  if (category) {
     filteredProducts = filteredProducts.filter(
-      (product) => product.categoryId === categoryId
+      (product) => product.categoryId === category
     );
   }
 
-  // Filter by search query
-  if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    filteredProducts = filteredProducts.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query) ||
-        (product.description &&
-          product.description.toLowerCase().includes(query)) ||
-        (product.tags &&
-          product.tags.some((tag) => tag.toLowerCase().includes(query)))
+  if (query) {
+    filteredProducts = filteredProducts.filter((product) =>
+      product.name.toLowerCase().includes(query.toLowerCase())
     );
   }
 
-  // Filter by in stock
-  if (inStockOnly) {
+  if (inStock === "true") {
     filteredProducts = filteredProducts.filter(
       (product) => product.inventory > 0
     );
   }
 
-  // Sort products
-  if (sort) {
-    switch (sort) {
-      case "price-asc":
-        filteredProducts.sort(
-          (a, b) => parseFloat(a.price) - parseFloat(b.price)
-        );
-        break;
-      case "price-desc":
-        filteredProducts.sort(
-          (a, b) => parseFloat(b.price) - parseFloat(a.price)
-        );
-        break;
-      case "name-asc":
-        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      case "name-desc":
-        filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-      case "newest":
-        filteredProducts.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        break;
-      default:
-        break;
-    }
+  if (sort === "price-asc") {
+    filteredProducts.sort((a, b) => Number(a.price) - Number(b.price));
   }
 
-  // Create URL search params utility for filtering
-  const createQueryString = (name: string, value: string | null): string => {
-    const params = new URLSearchParams(searchParams as Record<string, string>);
-    if (value === null) {
-      params.delete(name);
-    } else {
-      params.set(name, value);
-    }
-    return params.toString();
-  };
+  if (sort === "price-desc") {
+    filteredProducts.sort((a, b) => Number(b.price) - Number(a.price));
+  }
 
   return (
-    <div>
-      {/* Filters */}
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <div>
-          <label
-            htmlFor="category"
-            className="mb-2 block text-sm font-medium text-foreground"
-          >
-            Category
-          </label>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-1 gap-4">
           <Select
-            defaultValue={categoryId}
+            value={category || ""}
             onValueChange={(value) => {
-              const url = new URL(window.location.href);
-              url.search = createQueryString(
-                "category",
-                value === "all" ? null : value
-              );
-              window.location.href = url.toString();
+              window.location.href = `?${createQueryString({
+                category: value || null,
+              })}`;
             }}
           >
-            <SelectTrigger id="category" className="w-full">
-              <SelectValue placeholder="All categories" />
+            <SelectTrigger className="w-full md:w-[200px]">
+              <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {categories.map((category) => (
+              <SelectItem value="">All</SelectItem>
+              {categories?.map((category) => (
                 <SelectItem key={category.id} value={category.id}>
                   {category.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <Input
+            placeholder="Search products..."
+            className="w-full md:w-[300px]"
+            value={query || ""}
+            onChange={(e) => {
+              window.location.href = `?${createQueryString({
+                query: e.target.value || null,
+              })}`;
+            }}
+          />
         </div>
-        <div>
-          <label
-            htmlFor="sort"
-            className="mb-2 block text-sm font-medium text-foreground"
-          >
-            Sort by
-          </label>
+        <div className="flex items-center gap-4">
           <Select
-            defaultValue={sort || "newest"}
+            value={sort || ""}
             onValueChange={(value) => {
-              const url = new URL(window.location.href);
-              url.search = createQueryString("sort", value);
-              window.location.href = url.toString();
+              window.location.href = `?${createQueryString({
+                sort: value || null,
+              })}`;
             }}
           >
-            <SelectTrigger id="sort" className="w-full">
+            <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="">Featured</SelectItem>
               <SelectItem value="price-asc">Price: Low to high</SelectItem>
               <SelectItem value="price-desc">Price: High to low</SelectItem>
-              <SelectItem value="name-asc">Name: A to Z</SelectItem>
-              <SelectItem value="name-desc">Name: Z to A</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div>
-          <label
-            htmlFor="search"
-            className="mb-2 block text-sm font-medium text-foreground"
-          >
-            Search
-          </label>
-          <form
-            action={(formData) => {
-              const search = formData.get("search") as string;
-              const url = new URL(window.location.href);
-              url.search = createQueryString("search", search || null);
-              window.location.href = url.toString();
-            }}
-            className="flex w-full items-center space-x-2"
-          >
-            <Input
-              id="search"
-              name="search"
-              placeholder="Search products..."
-              defaultValue={searchQuery || ""}
-              className="flex-1"
-            />
-            <Button type="submit" variant="secondary" size="sm">
-              Search
-            </Button>
-          </form>
-        </div>
-        <div className="flex items-end">
           <Button
-            variant="outline"
-            className="w-full"
+            variant={inStock === "true" ? "default" : "outline"}
             onClick={() => {
-              window.location.href = "/products";
+              window.location.href = `?${createQueryString({
+                inStock: inStock === "true" ? null : "true",
+              })}`;
             }}
           >
-            Clear filters
+            In stock only
           </Button>
         </div>
       </div>
-
-      {/* Product count */}
-      <p className="mb-6 text-sm text-muted-foreground">
-        Showing {filteredProducts.length} products
-      </p>
-
-      {/* Products grid */}
-      {filteredProducts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <p className="mb-4 text-lg font-medium">No products found</p>
-          <p className="text-muted-foreground">
-            Try adjusting your filters or search terms
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {filteredProducts.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
     </div>
   );
 }

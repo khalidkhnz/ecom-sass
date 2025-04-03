@@ -48,6 +48,11 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       icon: <Tag className="h-5 w-5" />,
     },
     {
+      label: "Subcategories",
+      href: "/admin/subcategories",
+      icon: <Tag className="h-5 w-5" />,
+    },
+    {
       label: "Brands",
       href: "/admin/brands",
       icon: <Briefcase className="h-5 w-5" />,
