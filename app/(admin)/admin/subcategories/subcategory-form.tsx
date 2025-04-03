@@ -49,13 +49,33 @@ export function SubcategoryForm({
     },
   });
 
+  // Generate slug from subcategory name
+  const generateSlug = () => {
+    const name = form.watch("name");
+    if (name) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      form.setValue("slug", slug);
+    }
+  };
+
   const onSubmit = async (data: SubcategoryFormData) => {
     try {
       if (initialData?.id) {
-        await updateSubcategory(initialData.id, data);
+        const result = await updateSubcategory(initialData.id, data);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("Subcategory updated successfully");
       } else {
-        await createSubcategory(data);
+        const result = await createSubcategory(data);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
         toast.success("Subcategory created successfully");
       }
       router.push("/admin/subcategories");
@@ -75,7 +95,14 @@ export function SubcategoryForm({
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input placeholder="Subcategory name" {...field} />
+                <Input
+                  placeholder="Subcategory name"
+                  {...field}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    generateSlug();
+                  }}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
