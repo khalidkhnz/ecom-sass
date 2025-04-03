@@ -11,6 +11,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { useVendors } from "@/hooks/useVendors";
 import { useBrands } from "@/hooks/useBrands";
+import { useSubcategoriesByCategoryId } from "@/hooks/useSubcategories";
 import type { ProductFormValues } from "@/app/actions/products";
 import { useProduct } from "@/hooks/useProduct";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import { AlertModal } from "@/components/modals/alert-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { uploadFile } from "@/lib/upload";
-import { useSubcategoriesByCategory } from "@/hooks/useSubcategories";
 import { getSubcategoriesByCategoryId } from "@/app/actions/subcategories";
 import BasicInfoForm from "./basic-info-form";
 import MediaAndSeoForm from "./media-and-seo-form";
@@ -196,6 +196,13 @@ export function ProductForm({ productId }: ProductFormProps) {
       variants: [],
     },
   });
+
+  const selectedCategory = form.watch("categoryId") || "";
+
+  const { data: subcategoriesData, isLoading: isLoadingSubcategories } =
+    useSubcategoriesByCategoryId(selectedCategory);
+
+  const subcategories = subcategoriesData?.data || [];
 
   // Reset form when initialData is loaded
   useEffect(() => {
@@ -475,11 +482,6 @@ export function ProductForm({ productId }: ProductFormProps) {
     form.setValue("images", newImages);
     setImageUrlInput("");
   };
-
-  const selectedCategory = form.watch("categoryId") || "";
-
-  const { subcategories, isLoading: isLoadingSubcategories } =
-    useSubcategoriesByCategory(selectedCategory);
 
   if (isEditing && !initialData) {
     return (

@@ -8,8 +8,9 @@ import {
   createSubcategory,
   updateSubcategory,
   deleteSubcategory,
-  type SubcategoryFormValues,
+  getSubcategoriesByCategoryId,
 } from "@/app/actions/subcategories";
+import { SubcategoryFormValues } from "@/zod/subcategory";
 
 // Query keys for subcategories
 export const subcategoryKeys = {
@@ -106,5 +107,20 @@ export function useSubcategory(id: string) {
       }
       return subcategory;
     },
+  });
+}
+
+// Hook for fetching subcategories by category ID
+export function useSubcategoriesByCategoryId(categoryId: string) {
+  return useQuery({
+    queryKey: [...subcategoryKeys.all, "byCategory", categoryId],
+    queryFn: async () => {
+      const result = await getSubcategoriesByCategoryId(categoryId);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    },
+    enabled: !!categoryId, // Only run the query if categoryId is provided
   });
 }

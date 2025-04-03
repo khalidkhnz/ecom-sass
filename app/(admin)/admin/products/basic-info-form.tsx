@@ -33,6 +33,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import ImagesUploader from "./images-uploader";
 import { FormValues, SubcategoryArray } from "./product-form";
+import { getBrands } from "@/app/actions/brands";
+import { getVendors } from "@/app/actions/vendors";
 
 export default function BasicInfoForm({
   form,
@@ -64,9 +66,9 @@ export default function BasicInfoForm({
   isLoadingCategories: boolean;
   categories: Category[];
   isLoadingBrands: boolean;
-  brands: Brand[];
+  brands: Awaited<ReturnType<typeof getBrands>>["data"];
   isLoadingVendors: boolean;
-  vendors: Vendor[];
+  vendors: Awaited<ReturnType<typeof getVendors>>["data"];
   setFeatureInput: (value: string) => void;
   featureInput: string;
   setImageUrlInput: (value: string) => void;

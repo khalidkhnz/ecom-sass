@@ -21,7 +21,8 @@ import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Category } from "@/schema/categories";
-import { Brand, Vendor } from "@/schema/products";
+import { getBrands } from "@/app/actions/brands";
+import { getVendors } from "@/app/actions/vendors";
 
 export default function AttributesAndCategories({
   form,
@@ -44,9 +45,9 @@ export default function AttributesAndCategories({
   isLoadingCategories: boolean;
   categories: Category[];
   isLoadingBrands: boolean;
-  brands: Brand[];
+  brands: Awaited<ReturnType<typeof getBrands>>["data"];
   isLoadingVendors: boolean;
-  vendors: Vendor[];
+  vendors: Awaited<ReturnType<typeof getVendors>>["data"];
   attributeName: string;
   setAttributeName: (value: string) => void;
   attributeValue: string;
