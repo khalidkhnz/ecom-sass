@@ -5,10 +5,7 @@ import { subcategories } from "@/schema/subcategories";
 import { eq, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { type PgTableWithColumns } from "drizzle-orm/pg-core";
-import {
-  subcategorySchema,
-  type SubcategoryFormData,
-} from "@/app/schemas/subcategory";
+import { subcategorySchema, type SubcategoryFormData } from "@/zod/subcategory";
 
 export async function getSubcategories() {
   try {

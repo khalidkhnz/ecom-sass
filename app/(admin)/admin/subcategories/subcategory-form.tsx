@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  subcategorySchema,
-  type SubcategoryFormData,
-} from "@/app/schemas/subcategory";
+import { subcategorySchema, type SubcategoryFormData } from "@/zod/subcategory";
 import { Category } from "@/schema/categories";
 import { useRouter } from "next/navigation";
 import {
