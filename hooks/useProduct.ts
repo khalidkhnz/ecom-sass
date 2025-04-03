@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery } from "@tanstack/react-query";
 import { getProductById } from "@/app/actions/products";
 import { productKeys } from "@/hooks/useProducts";

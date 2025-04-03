@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -6,8 +8,8 @@ import {
   createVendor,
   updateVendor,
   deleteVendor,
-  type VendorFormValues,
 } from "@/app/actions/vendors";
+import { VendorFormValues } from "@/zod/vendor";
 
 // Query keys for vendors
 export const vendorKeys = {

@@ -107,15 +107,6 @@ export function VendorTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search vendors..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
       <DataTable
         data={vendors as Vendor[]}
         columns={columns}

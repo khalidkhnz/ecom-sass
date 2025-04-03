@@ -31,12 +31,12 @@ import { Separator } from "@/components/ui/separator";
 import { Heading } from "@/components/ui/heading";
 import { AlertModal } from "@/components/modals/alert-modal";
 import {
-  VendorFormValues,
   createVendor,
   updateVendor,
   deleteVendor,
 } from "@/app/actions/vendors";
 import { Vendor } from "@/schema/products";
+import { VendorFormValues } from "@/zod/vendor";
 
 // Form schema
 const formSchema = z.object({
@@ -146,6 +146,7 @@ export function VendorForm({ initialData }: VendorFormProps) {
           return;
         }
         toast.success("Vendor updated");
+        router.push("/admin/vendors");
       } else {
         const result = await createVendor(data);
         if (result.error) {

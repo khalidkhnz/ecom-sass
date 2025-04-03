@@ -16,7 +16,7 @@ export const metadata = {
   description: "Manage vendors in your marketplace",
 };
 
-export default function VendorsPage() {
+export default async function VendorsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
