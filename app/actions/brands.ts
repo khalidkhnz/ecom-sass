@@ -2,8 +2,9 @@
 
 import { db } from "@/lib/db";
 import { brands } from "@/schema/products";
+import { products } from "@/schema/products";
 import { createId } from "@paralleldrive/cuid2";
-import { eq, desc } from "drizzle-orm";
+import { eq, sql, count, and, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -18,24 +19,98 @@ const brandSchema = z.object({
     }),
   description: z.string().optional(),
   logo: z.string().optional(),
-  website: z.string().url().optional(),
-  featured: z.boolean().default(false),
 });
 
 export type BrandFormValues = z.infer<typeof brandSchema>;
 
 // Get all brands
-export async function getBrands() {
+export async function getBrands(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   try {
-    const allBrands = await db
-      .select()
-      .from(brands)
-      .orderBy(desc(brands.createdAt));
+    const { search, page = 1, limit = 10 } = params || {};
+    const offset = (page - 1) * limit;
 
-    return allBrands;
+    // Build the query
+    const queryBuilder = db
+      .select({
+        id: brands.id,
+        name: brands.name,
+        slug: brands.slug,
+        description: brands.description,
+        logo: brands.logo,
+        createdAt: brands.createdAt,
+        updatedAt: brands.updatedAt,
+      })
+      .from(brands);
+
+    // Apply search filter if provided
+    const filteredQuery = search
+      ? queryBuilder.where(
+          sql`(${brands.name} LIKE ${`%${search}%`} OR ${
+            brands.slug
+          } LIKE ${`%${search}%`})`
+        )
+      : queryBuilder;
+
+    // Get total count for pagination
+    const countQuery = search
+      ? db
+          .select({ count: sql<number>`count(*)` })
+          .from(brands)
+          .where(
+            sql`(${brands.name} LIKE ${`%${search}%`} OR ${
+              brands.slug
+            } LIKE ${`%${search}%`})`
+          )
+      : db.select({ count: sql<number>`count(*)` }).from(brands);
+
+    const [{ count }] = await countQuery;
+    const totalPages = Math.ceil(count / limit);
+
+    // Apply pagination
+    const allBrands = await filteredQuery
+      .orderBy(brands.name)
+      .limit(limit)
+      .offset(offset);
+
+    // Get product counts for each brand
+    const productCounts = await db
+      .select({
+        brandId: products.brandId,
+        count: sql<number>`count(${products.id})`,
+      })
+      .from(products)
+      .groupBy(products.brandId);
+
+    // Create a map of brand ID to product count
+    const productCountMap = productCounts.reduce((acc, { brandId, count }) => {
+      if (brandId) {
+        acc[brandId] = count;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Combine the data
+    const data = allBrands.map((brand) => ({
+      ...brand,
+      productCount: productCountMap[brand.id] || 0,
+    }));
+
+    return {
+      data,
+      pagination: {
+        total: count,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    };
   } catch (error) {
     console.error("Error fetching brands:", error);
-    throw new Error("Failed to fetch brands");
+    return { error: "Failed to fetch brands" };
   }
 }
 
@@ -45,10 +120,6 @@ export async function getBrandById(id: string) {
     const brand = await db.query.brands.findFirst({
       where: eq(brands.id, id),
     });
-
-    if (!brand) {
-      return null;
-    }
 
     return brand;
   } catch (error) {
@@ -81,34 +152,29 @@ export async function createBrand(data: BrandFormValues) {
     // Validate data
     const validatedData = brandSchema.parse(data);
 
-    const slugExists = await db.query.brands.findFirst({
+    // Check if slug exists
+    const existingBrand = await db.query.brands.findFirst({
       where: eq(brands.slug, validatedData.slug),
     });
 
-    if (slugExists) {
+    if (existingBrand) {
       return { error: "A brand with this slug already exists" };
     }
 
-    // Create new brand ID
-    const id = createId();
-
-    // Create brand
-    await db.insert(brands).values({
-      id,
+    // Create new brand
+    const newBrand = {
+      id: createId(),
       name: validatedData.name,
       slug: validatedData.slug,
       description: validatedData.description || null,
       logo: validatedData.logo || null,
-      website: validatedData.website || null,
-      featured: validatedData.featured,
-    });
+    };
+
+    await db.insert(brands).values(newBrand);
 
     revalidatePath("/admin/brands");
 
-    return {
-      success: true,
-      brandId: id,
-    };
+    return { success: true, brand: newBrand };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { error: error.errors[0].message };
@@ -119,7 +185,7 @@ export async function createBrand(data: BrandFormValues) {
   }
 }
 
-// Update an existing brand
+// Update a brand
 export async function updateBrand(id: string, data: BrandFormValues) {
   try {
     // Validate data
@@ -134,7 +200,7 @@ export async function updateBrand(id: string, data: BrandFormValues) {
       return { error: "Brand not found" };
     }
 
-    // Check slug if changed
+    // Check if slug exists (if changed)
     if (validatedData.slug !== existingBrand.slug) {
       const slugExists = await db.query.brands.findFirst({
         where: eq(brands.slug, validatedData.slug),
@@ -153,8 +219,6 @@ export async function updateBrand(id: string, data: BrandFormValues) {
         slug: validatedData.slug,
         description: validatedData.description || null,
         logo: validatedData.logo || null,
-        website: validatedData.website || null,
-        featured: validatedData.featured,
         updatedAt: new Date(),
       })
       .where(eq(brands.id, id));
@@ -175,12 +239,28 @@ export async function updateBrand(id: string, data: BrandFormValues) {
 // Delete a brand
 export async function deleteBrand(id: string) {
   try {
+    // Check if brand exists and get associated products
+    const brandProducts = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.brandId, id));
+
+    const productCount = brandProducts.length;
+
     // Delete brand
     await db.delete(brands).where(eq(brands.id, id));
 
+    // Update any associated products to remove the brand
+    if (productCount > 0) {
+      await db
+        .update(products)
+        .set({ brandId: null })
+        .where(eq(products.brandId, id));
+    }
+
     revalidatePath("/admin/brands");
 
-    return { success: true };
+    return { success: true, productCount };
   } catch (error) {
     console.error("Error deleting brand:", error);
     return { error: "Failed to delete brand" };

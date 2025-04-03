@@ -1,106 +1,108 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   getVendors,
   getVendorById,
   createVendor,
   updateVendor,
   deleteVendor,
-  updateVendorStatus,
   type VendorFormValues,
 } from "@/app/actions/vendors";
-import { toast } from "sonner";
 
+// Query keys for vendors
 export const vendorKeys = {
   all: ["vendors"] as const,
   lists: () => [...vendorKeys.all, "list"] as const,
-  list: (filters: string) => [...vendorKeys.lists(), { filters }] as const,
+  list: (params: { search?: string; page?: number; limit?: number }) =>
+    [...vendorKeys.lists(), params] as const,
   details: () => [...vendorKeys.all, "detail"] as const,
   detail: (id: string) => [...vendorKeys.details(), id] as const,
 };
 
-export function useVendors() {
+// Hook for fetching vendors with pagination and search
+export function useVendors(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   const queryClient = useQueryClient();
 
-  const vendorsQuery = useQuery({
-    queryKey: vendorKeys.lists(),
-    queryFn: () => getVendors(),
-  });
-
-  const createVendorMutation = useMutation({
-    mutationFn: (data: VendorFormValues) => createVendor(data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success("Vendor created successfully");
-        queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-      } else {
-        toast.error(result.error || "Failed to create vendor");
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: vendorKeys.list(params || {}),
+    queryFn: async () => {
+      const result = await getVendors(params);
+      if (result.error) {
+        throw new Error(result.error);
       }
       return result;
     },
   });
 
+  // Create vendor mutation
+  const createVendorMutation = useMutation({
+    mutationFn: (data: VendorFormValues) => createVendor(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+      toast.success("Vendor created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create vendor");
+    },
+  });
+
+  // Update vendor mutation
   const updateVendorMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: VendorFormValues }) =>
       updateVendor(id, data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success("Vendor updated successfully");
-        queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-      } else {
-        toast.error(result.error || "Failed to update vendor");
-      }
-      return result;
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+      toast.success("Vendor updated successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update vendor");
     },
   });
 
+  // Delete vendor mutation
   const deleteVendorMutation = useMutation({
     mutationFn: (id: string) => deleteVendor(id),
     onSuccess: (result) => {
-      if (result.success) {
-        toast.success("Vendor deleted successfully");
-        queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-      } else {
-        toast.error(result.error || "Failed to delete vendor");
-      }
-      return result;
+      queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+      toast.success(
+        `Vendor deleted successfully${
+          result.productCount
+            ? ` (${result.productCount} products updated)`
+            : ""
+        }`
+      );
     },
-  });
-
-  const updateVendorStatusMutation = useMutation({
-    mutationFn: ({
-      id,
-      status,
-    }: {
-      id: string;
-      status: "pending" | "active" | "suspended";
-    }) => updateVendorStatus(id, status),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success("Vendor status updated successfully");
-        queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
-      } else {
-        toast.error(result.error || "Failed to update vendor status");
-      }
-      return result;
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete vendor");
     },
   });
 
   return {
-    vendors: vendorsQuery.data || [],
-    isLoading: vendorsQuery.isLoading,
-    isError: vendorsQuery.isError,
-    error: vendorsQuery.error,
-    createVendor: createVendorMutation.mutateAsync,
-    updateVendor: updateVendorMutation.mutateAsync,
-    deleteVendor: deleteVendorMutation.mutateAsync,
-    updateVendorStatus: updateVendorStatusMutation.mutateAsync,
+    vendors: data?.data || [],
+    pagination: data?.pagination,
+    isLoading,
+    error,
+    refetch,
+    createVendor: createVendorMutation.mutate,
+    updateVendor: updateVendorMutation.mutate,
+    deleteVendor: deleteVendorMutation.mutate,
   };
 }
 
+// Hook for fetching a single vendor
 export function useVendor(id: string) {
   return useQuery({
     queryKey: vendorKeys.detail(id),
-    queryFn: () => getVendorById(id),
-    enabled: !!id,
+    queryFn: async () => {
+      const vendor = await getVendorById(id);
+      if (!vendor) {
+        throw new Error("Vendor not found");
+      }
+      return vendor;
+    },
   });
 }

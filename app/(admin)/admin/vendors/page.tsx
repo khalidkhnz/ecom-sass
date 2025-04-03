@@ -1,39 +1,46 @@
-import { Suspense } from "react";
-import { VendorsClient } from "./vendors-client";
-import { getVendors } from "@/app/actions/vendors";
-import { Heading } from "@/components/ui/heading";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { PlusCircle } from "lucide-react";
+import { VendorTable } from "./vendor-table";
 import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
 
 export const metadata = {
   title: "Vendors",
   description: "Manage vendors in your marketplace",
 };
 
-export default async function VendorsPage() {
-  const vendors = await getVendors();
-
+export default function VendorsPage() {
   return (
-    <div className="flex-col">
-      <div className="flex-1 space-y-4 p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <Heading
-            title={`Vendors (${vendors.length})`}
-            description="Manage your marketplace vendors"
-          />
-          <Button asChild>
-            <Link href="/admin/vendors/new">
-              <Plus className="mr-2 h-4 w-4" /> Add New
-            </Link>
-          </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Vendors</h1>
+          <p className="text-gray-500">Manage your product vendors</p>
         </div>
-        <Separator className="my-4" />
-        <Suspense fallback={<div>Loading vendors...</div>}>
-          <VendorsClient data={vendors} />
-        </Suspense>
+        <Button asChild>
+          <Link href="/admin/vendors/new">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            <span>New Vendor</span>
+          </Link>
+        </Button>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Vendors</CardTitle>
+          <CardDescription>View and manage all product vendors</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <VendorTable />
+        </CardContent>
+      </Card>
     </div>
   );
 }

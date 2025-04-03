@@ -1,38 +1,108 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   getSubcategories,
-  getSubcategoriesByCategoryId,
+  getSubcategoryById,
+  createSubcategory,
+  updateSubcategory,
+  deleteSubcategory,
+  type SubcategoryFormValues,
 } from "@/app/actions/subcategories";
 
-export function useSubcategories() {
-  const { data: subcategories, isLoading } = useQuery({
-    queryKey: ["subcategories"],
+// Query keys for subcategories
+export const subcategoryKeys = {
+  all: ["subcategories"] as const,
+  lists: () => [...subcategoryKeys.all, "list"] as const,
+  list: (params: { search?: string; page?: number; limit?: number }) =>
+    [...subcategoryKeys.lists(), params] as const,
+  details: () => [...subcategoryKeys.all, "detail"] as const,
+  detail: (id: string) => [...subcategoryKeys.details(), id] as const,
+};
+
+// Hook for fetching subcategories with pagination and search
+export function useSubcategories(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: subcategoryKeys.list(params || {}),
     queryFn: async () => {
-      const { data, error } = await getSubcategories();
-      if (error) throw new Error(error);
-      return data;
+      const result = await getSubcategories(params);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    },
+  });
+
+  // Create subcategory mutation
+  const createSubcategoryMutation = useMutation({
+    mutationFn: (data: SubcategoryFormValues) => createSubcategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: subcategoryKeys.lists() });
+      toast.success("Subcategory created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create subcategory");
+    },
+  });
+
+  // Update subcategory mutation
+  const updateSubcategoryMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: SubcategoryFormValues }) =>
+      updateSubcategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: subcategoryKeys.lists() });
+      toast.success("Subcategory updated successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update subcategory");
+    },
+  });
+
+  // Delete subcategory mutation
+  const deleteSubcategoryMutation = useMutation({
+    mutationFn: (id: string) => deleteSubcategory(id),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: subcategoryKeys.lists() });
+      toast.success(
+        `Subcategory deleted successfully${
+          result.productCount
+            ? ` (${result.productCount} products updated)`
+            : ""
+        }`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete subcategory");
     },
   });
 
   return {
-    subcategories,
+    subcategories: data?.data || [],
+    pagination: data?.pagination,
     isLoading,
+    error,
+    refetch,
+    createSubcategory: createSubcategoryMutation.mutate,
+    updateSubcategory: updateSubcategoryMutation.mutate,
+    deleteSubcategory: deleteSubcategoryMutation.mutate,
   };
 }
 
-export function useSubcategoriesByCategory(categoryId: string) {
-  const { data: subcategories, isLoading } = useQuery({
-    queryKey: ["subcategories", categoryId],
+// Hook for fetching a single subcategory
+export function useSubcategory(id: string) {
+  return useQuery({
+    queryKey: subcategoryKeys.detail(id),
     queryFn: async () => {
-      const { data, error } = await getSubcategoriesByCategoryId(categoryId);
-      if (error) throw new Error(error);
-      return data;
+      const subcategory = await getSubcategoryById(id);
+      if (!subcategory) {
+        throw new Error("Subcategory not found");
+      }
+      return subcategory;
     },
-    enabled: !!categoryId,
   });
-
-  return {
-    subcategories,
-    isLoading,
-  };
 }

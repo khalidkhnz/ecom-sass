@@ -1,49 +1,43 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCategories } from "@/hooks/useCategories";
 import { DataTable, Column } from "@/components/ui/data-table";
+import { useBrands } from "@/hooks/useBrands";
+import { formatDate } from "@/lib/utils";
 
-interface Category {
+interface Brand {
   id: string;
   name: string;
   slug: string;
   description: string | null;
+  logo: string | null;
   productCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export function CategoryTable() {
+export function BrandTable() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const limit = 10;
 
-  const { categories, pagination, isLoading, deleteCategory } = useCategories({
+  const { brands, pagination, isLoading, deleteBrand } = useBrands({
     search,
     page,
     limit,
   });
 
   const handleEdit = (id: string) => {
-    router.push(`/admin/categories/${id}/edit`);
+    router.push(`/admin/brands/${id}`);
   };
 
   const handleDelete = async (id: string) => {
-    await deleteCategory(id);
+    await deleteBrand(id);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const columns: Column<Category>[] = [
+  const columns: Column<Brand>[] = [
     {
       header: "Name",
       accessorKey: "name",
@@ -58,6 +52,19 @@ export function CategoryTable() {
       className: "max-w-xs truncate",
     },
     {
+      header: "Logo",
+      accessorKey: (item) =>
+        item.logo ? (
+          <img
+            src={item.logo}
+            alt={item.name}
+            className="w-8 h-8 object-contain"
+          />
+        ) : (
+          "-"
+        ),
+    },
+    {
       header: "Products",
       accessorKey: "productCount",
       className: "text-center",
@@ -70,10 +77,10 @@ export function CategoryTable() {
 
   return (
     <DataTable
-      data={categories}
+      data={brands}
       columns={columns}
       isLoading={isLoading}
-      searchPlaceholder="Search categories..."
+      searchPlaceholder="Search brands..."
       onSearch={setSearch}
       onEdit={handleEdit}
       onDelete={handleDelete}
@@ -82,7 +89,7 @@ export function CategoryTable() {
       idField="id"
       nameField="name"
       countField="productCount"
-      emptyMessage="No categories found"
+      emptyMessage="No brands found"
     />
   );
 }

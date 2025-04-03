@@ -2,13 +2,14 @@
 
 import { db } from "@/lib/db";
 import { vendors } from "@/schema/products";
+import { products } from "@/schema/products";
 import { createId } from "@paralleldrive/cuid2";
-import { eq, desc } from "drizzle-orm";
+import { eq, sql, count, and, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 // Schema for vendor validation
-const vendorSchema = z.object({
+export const vendorSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   slug: z
     .string()
@@ -40,17 +41,98 @@ const vendorSchema = z.object({
 export type VendorFormValues = z.infer<typeof vendorSchema>;
 
 // Get all vendors
-export async function getVendors() {
+export async function getVendors(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
   try {
-    const allVendors = await db
-      .select()
-      .from(vendors)
-      .orderBy(desc(vendors.createdAt));
+    const { search, page = 1, limit = 10 } = params || {};
+    const offset = (page - 1) * limit;
 
-    return allVendors;
+    // Build the query
+    const queryBuilder = db
+      .select({
+        id: vendors.id,
+        name: vendors.name,
+        slug: vendors.slug,
+        description: vendors.description,
+        logo: vendors.logo,
+        email: vendors.email,
+        phone: vendors.phone,
+        address: vendors.address,
+        status: vendors.status,
+        commissionRate: vendors.commissionRate,
+        createdAt: vendors.createdAt,
+        updatedAt: vendors.updatedAt,
+      })
+      .from(vendors);
+
+    // Apply search filter if provided
+    const filteredQuery = search
+      ? queryBuilder.where(
+          sql`(${vendors.name} LIKE ${`%${search}%`} OR ${
+            vendors.slug
+          } LIKE ${`%${search}%`})`
+        )
+      : queryBuilder;
+
+    // Get total count for pagination
+    const countQuery = search
+      ? db
+          .select({ count: sql<number>`count(*)` })
+          .from(vendors)
+          .where(
+            sql`(${vendors.name} LIKE ${`%${search}%`} OR ${
+              vendors.slug
+            } LIKE ${`%${search}%`})`
+          )
+      : db.select({ count: sql<number>`count(*)` }).from(vendors);
+
+    const [{ count }] = await countQuery;
+    const totalPages = Math.ceil(count / limit);
+
+    // Apply pagination
+    const allVendors = await filteredQuery
+      .orderBy(vendors.name)
+      .limit(limit)
+      .offset(offset);
+
+    // Get product counts for each vendor
+    const productCounts = await db
+      .select({
+        vendorId: products.vendorId,
+        count: sql<number>`count(${products.id})`,
+      })
+      .from(products)
+      .groupBy(products.vendorId);
+
+    // Create a map of vendor ID to product count
+    const productCountMap = productCounts.reduce((acc, { vendorId, count }) => {
+      if (vendorId) {
+        acc[vendorId] = count;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Combine the data
+    const data = allVendors.map((vendor) => ({
+      ...vendor,
+      productCount: productCountMap[vendor.id] || 0,
+    }));
+
+    return {
+      data,
+      pagination: {
+        total: count,
+        totalPages,
+        currentPage: page,
+        limit,
+      },
+    };
   } catch (error) {
     console.error("Error fetching vendors:", error);
-    throw new Error("Failed to fetch vendors");
+    return { error: "Failed to fetch vendors" };
   }
 }
 
@@ -60,10 +142,6 @@ export async function getVendorById(id: string) {
     const vendor = await db.query.vendors.findFirst({
       where: eq(vendors.id, id),
     });
-
-    if (!vendor) {
-      return null;
-    }
 
     return vendor;
   } catch (error) {
@@ -96,37 +174,34 @@ export async function createVendor(data: VendorFormValues) {
     // Validate data
     const validatedData = vendorSchema.parse(data);
 
-    const slugExists = await db.query.vendors.findFirst({
+    // Check if slug exists
+    const existingVendor = await db.query.vendors.findFirst({
       where: eq(vendors.slug, validatedData.slug),
     });
 
-    if (slugExists) {
+    if (existingVendor) {
       return { error: "A vendor with this slug already exists" };
     }
 
-    // Create new vendor ID
-    const id = createId();
-
-    // Create vendor
-    await db.insert(vendors).values({
-      id,
+    // Create new vendor
+    const newVendor = {
+      id: createId(),
       name: validatedData.name,
       slug: validatedData.slug,
-      description: validatedData.description || null,
-      logo: validatedData.logo || null,
+      description: validatedData.description || "",
+      logo: validatedData.logo || "",
       email: validatedData.email,
-      phone: validatedData.phone || null,
+      phone: validatedData.phone || "",
       address: validatedData.address || {},
       status: validatedData.status,
       commissionRate: String(validatedData.commissionRate),
-    });
+    };
+
+    await db.insert(vendors).values(newVendor);
 
     revalidatePath("/admin/vendors");
 
-    return {
-      success: true,
-      vendorId: id,
-    };
+    return { success: true, vendor: newVendor };
   } catch (error) {
     if (error instanceof z.ZodError) {
       return { error: error.errors[0].message };
@@ -137,7 +212,7 @@ export async function createVendor(data: VendorFormValues) {
   }
 }
 
-// Update an existing vendor
+// Update a vendor
 export async function updateVendor(id: string, data: VendorFormValues) {
   try {
     // Validate data
@@ -152,7 +227,7 @@ export async function updateVendor(id: string, data: VendorFormValues) {
       return { error: "Vendor not found" };
     }
 
-    // Check slug if changed
+    // Check if slug exists (if changed)
     if (validatedData.slug !== existingVendor.slug) {
       const slugExists = await db.query.vendors.findFirst({
         where: eq(vendors.slug, validatedData.slug),
@@ -169,10 +244,10 @@ export async function updateVendor(id: string, data: VendorFormValues) {
       .set({
         name: validatedData.name,
         slug: validatedData.slug,
-        description: validatedData.description || null,
-        logo: validatedData.logo || null,
+        description: validatedData.description || "",
+        logo: validatedData.logo || "",
         email: validatedData.email,
-        phone: validatedData.phone || null,
+        phone: validatedData.phone || "",
         address: validatedData.address || {},
         status: validatedData.status,
         commissionRate: String(validatedData.commissionRate),
@@ -196,12 +271,28 @@ export async function updateVendor(id: string, data: VendorFormValues) {
 // Delete a vendor
 export async function deleteVendor(id: string) {
   try {
+    // Check if vendor exists and get associated products
+    const vendorProducts = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.vendorId, id));
+
+    const productCount = vendorProducts.length;
+
     // Delete vendor
     await db.delete(vendors).where(eq(vendors.id, id));
 
+    // Update any associated products to remove the vendor
+    if (productCount > 0) {
+      await db
+        .update(products)
+        .set({ vendorId: null })
+        .where(eq(products.vendorId, id));
+    }
+
     revalidatePath("/admin/vendors");
 
-    return { success: true };
+    return { success: true, productCount };
   } catch (error) {
     console.error("Error deleting vendor:", error);
     return { error: "Failed to delete vendor" };

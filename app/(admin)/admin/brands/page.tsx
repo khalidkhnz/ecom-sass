@@ -1,10 +1,14 @@
-import { Suspense } from "react";
-import { BrandsClient } from "./brands-client";
-import { getBrands } from "@/app/actions/brands";
-import { Heading } from "@/components/ui/heading";
-import { Separator } from "@/components/ui/separator";
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { PlusCircle } from "lucide-react";
+import { BrandTable } from "./brand-table";
 import Link from "next/link";
 
 export const metadata = {
@@ -12,26 +16,31 @@ export const metadata = {
   description: "Manage your store brands",
 };
 
-export default async function BrandsPage() {
-  const brands = await getBrands();
-
+export default function BrandsPage() {
   return (
-    <div className="flex-col">
-      <div className="flex items-center justify-between">
-        <Heading
-          title={`Brands (${brands.length})`}
-          description="Manage your store brands"
-        />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Brands</h1>
+          <p className="text-gray-500">Manage your product brands</p>
+        </div>
         <Button asChild>
           <Link href="/admin/brands/new">
-            <Plus className="mr-2 h-4 w-4" /> Add New
+            <PlusCircle className="h-4 w-4 mr-2" />
+            <span>New Brand</span>
           </Link>
         </Button>
       </div>
-      <Separator className="my-4" />
-      <Suspense fallback={<div>Loading brands...</div>}>
-        <BrandsClient data={brands} />
-      </Suspense>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Brands</CardTitle>
+          <CardDescription>View and manage all product brands</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BrandTable />
+        </CardContent>
+      </Card>
     </div>
   );
 }

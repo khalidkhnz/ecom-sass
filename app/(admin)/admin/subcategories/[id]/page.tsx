@@ -12,11 +12,10 @@ export default async function EditSubcategoryPage({
   params,
 }: EditSubcategoryPageProps) {
   const { id } = await params;
-  const { data: subcategory, error: subcategoryError } =
-    await getSubcategoryById(id);
+  const subcategory = await getSubcategoryById(id);
   const { data: categories, error: categoriesError } = await getCategories();
 
-  if (subcategoryError || categoriesError || !subcategory) {
+  if (categoriesError || !subcategory) {
     return notFound();
   }
 

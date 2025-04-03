@@ -24,12 +24,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Heading } from "@/components/ui/heading";
 import { AlertModal } from "@/components/modals/alert-modal";
-import {
-  BrandFormValues,
-  createBrand,
-  updateBrand,
-  deleteBrand,
-} from "@/app/actions/brands";
+import { createBrand, updateBrand, deleteBrand } from "@/app/actions/brands";
 import { Brand } from "@/schema/products";
 
 // Form schema
@@ -50,6 +45,9 @@ const formSchema = z.object({
     .or(z.literal("")),
   featured: z.boolean(),
 });
+
+// Define the type based on the schema
+type BrandFormValues = z.infer<typeof formSchema>;
 
 interface BrandFormProps {
   initialData?: Brand | null;
@@ -112,6 +110,7 @@ export function BrandForm({ initialData }: BrandFormProps) {
           return;
         }
         toast.success("Brand updated");
+        router.push("/admin/brands");
       } else {
         const result = await createBrand(data);
         if (result.error) {
