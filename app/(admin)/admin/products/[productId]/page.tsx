@@ -3,7 +3,6 @@ import { ProductForm } from "../product-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
-import { getProductById } from "@/app/actions/products";
 
 interface ProductPageProps {
   params: {
@@ -12,8 +11,6 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProductById(params.productId);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

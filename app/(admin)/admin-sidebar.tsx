@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Briefcase,
+  Store,
 } from "lucide-react";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -44,6 +46,16 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       label: "Categories",
       href: "/admin/categories",
       icon: <Tag className="h-5 w-5" />,
+    },
+    {
+      label: "Brands",
+      href: "/admin/brands",
+      icon: <Briefcase className="h-5 w-5" />,
+    },
+    {
+      label: "Vendors",
+      href: "/admin/vendors",
+      icon: <Store className="h-5 w-5" />,
     },
     {
       label: "Orders",
