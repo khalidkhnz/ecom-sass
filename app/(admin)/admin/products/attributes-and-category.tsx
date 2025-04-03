@@ -24,6 +24,7 @@ import { Category } from "@/schema/categories";
 import { getBrands } from "@/app/actions/brands";
 import { getVendors } from "@/app/actions/vendors";
 import { CustomFormSelectField } from "@/components/custom-form-field";
+import { useState, useEffect } from "react";
 
 export default function AttributesAndCategories({
   form,
@@ -56,6 +57,25 @@ export default function AttributesAndCategories({
   subcategories: SubcategoryArray;
   isLoadingSubcategories: boolean;
 }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const categoryOptions =
+    categories?.map((category) => ({
+      id: category.id,
+      name: category.name,
+    })) || [];
+
+  const filteredCategories =
+    searchTerm.trim() === ""
+      ? categoryOptions
+      : categoryOptions.filter((c) =>
+          c.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
+        );
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+  };
+
   return (
     <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
       <div className="space-y-6">
@@ -71,10 +91,12 @@ export default function AttributesAndCategories({
               field.onChange(val);
               form.setValue("subcategoryId", "");
             }}
-            options={categories?.map((category) => ({
-              id: category.id,
-              name: category.name,
-            }))}
+            options={filteredCategories}
+            searchMode={true}
+            searchPlaceholder="Search for a category"
+            searchTerm={searchTerm}
+            onSearchTermChange={handleSearchChange}
+            popoverClassName="max-h-[300px]"
           />
 
           <CustomFormSelectField
@@ -84,7 +106,7 @@ export default function AttributesAndCategories({
               loading || isLoadingSubcategories || subcategories?.length === 0
             }
             label="Subcategory"
-            placeholder="Select a category"
+            placeholder="Select a subcategory"
             onValueChange={(field, val) => {
               field.onChange(val);
             }}
