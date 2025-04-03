@@ -15,6 +15,13 @@
       "when": 1743532906827,
       "tag": "0001_tired_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1743671196652,
+      "tag": "0002_flippant_corsair",
+      "breakpoints": true
     }
   ]
 }

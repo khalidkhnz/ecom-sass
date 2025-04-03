@@ -68,6 +68,7 @@ const productSchema = z.object({
   images: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),
   labels: z.array(z.string()).default([]),
+  features: z.array(z.string()).default([]),
   attributes: z
     .record(z.string(), z.union([z.string(), z.array(z.string())]))
     .optional(),
@@ -342,6 +343,7 @@ export async function createProduct(data: ProductFormValues) {
       images: validatedData.images,
       tags: validatedData.tags || [],
       labels: validatedData.labels || [],
+      features: validatedData.features || [],
       attributes: validatedData.attributes || {},
       metaTitle: validatedData.metaTitle || null,
       metaDescription: validatedData.metaDescription || null,
@@ -469,6 +471,7 @@ export async function updateProduct(id: string, data: ProductFormValues) {
         images: validatedData.images,
         tags: validatedData.tags || [],
         labels: validatedData.labels || [],
+        features: validatedData.features || [],
         attributes: validatedData.attributes || {},
         metaTitle: validatedData.metaTitle || null,
         metaDescription: validatedData.metaDescription || null,

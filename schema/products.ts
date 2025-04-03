@@ -151,6 +151,7 @@ export const products = pgTable(
     status: text().notNull().default("draft"),
     images: jsonb().$type<string[]>().default([]),
     tags: jsonb().$type<string[]>().default([]),
+    features: jsonb().$type<string[]>().default([]), // Product features
     attributes: jsonb().default({}), // For color, size, material, etc.
     rating: numeric(3, 2).default("0"), // Average rating (0-5)
     reviewCount: numeric("review_count", { precision: 10, scale: 0 }).default(

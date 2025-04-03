@@ -51,15 +51,15 @@ async function getSimilarProducts(
 }
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     productId: string;
-  };
+  }>;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <Suspense fallback={<ProductSkeleton />}>
-      <ProductDetails productId={params.productId} />
+      <ProductDetails productId={(await params).productId} />
     </Suspense>
   );
 }
@@ -76,6 +76,7 @@ async function ProductDetails({ productId }: { productId: string }) {
     ...productData,
     tags: productData.tags || [],
     images: productData.images || [],
+    features: productData.features || [],
     attributes: productData.attributes || {},
     dimensions: productData.dimensions || { length: 0, width: 0, height: 0 },
     variants: productData.variants || [],
@@ -415,12 +416,19 @@ async function ProductDetails({ productId }: { productId: string }) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                   <div>
                     <h4 className="text-sm font-medium mb-2">Features</h4>
-                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                      <li>Premium quality materials</li>
-                      <li>Designed for durability</li>
-                      <li>Modern and elegant design</li>
-                      <li>Versatile use cases</li>
-                    </ul>
+                    {product.features && product.features.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        {product.features.map(
+                          (feature: string, index: number) => (
+                            <li key={index}>{feature}</li>
+                          )
+                        )}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No features available for this product.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <h4 className="text-sm font-medium mb-2">Specifications</h4>

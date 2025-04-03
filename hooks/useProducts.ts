@@ -36,6 +36,7 @@ export interface Product {
   vendorId: string | null;
   tags: string[];
   images: string[];
+  features: string[];
   attributes: Record<string, any>;
   rating: number;
   reviewCount: number;

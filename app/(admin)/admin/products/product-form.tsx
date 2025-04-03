@@ -153,6 +153,7 @@ const formSchema = z.object({
   images: z.array(z.string()),
   tags: z.array(z.string()),
   labels: z.array(z.string()).default([]),
+  features: z.array(z.string()).default([]),
   attributes: z
     .record(z.string(), z.union([z.string(), z.array(z.string())]))
     .optional(),
@@ -197,6 +198,7 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [imageUrlInput, setImageUrlInput] = useState("");
   const [attributeName, setAttributeName] = useState("");
   const [attributeValue, setAttributeValue] = useState("");
+  const [featureInput, setFeatureInput] = useState("");
 
   const { createProduct, updateProduct, deleteProduct } = useProducts();
   const { data: initialData, isLoading: isLoadingProduct } = useProduct(
@@ -247,6 +249,7 @@ export function ProductForm({ productId }: ProductFormProps) {
       images: [],
       tags: [],
       labels: [],
+      features: [],
       attributes: {} as Record<string, string | string[]>,
       metaTitle: "",
       metaDescription: "",
@@ -314,6 +317,7 @@ export function ProductForm({ productId }: ProductFormProps) {
         images: initialData.images || [],
         tags: initialData.tags || [],
         labels: initialData.labels || [],
+        features: initialData.features || [],
         attributes: (initialData.attributes || {}) as Record<
           string,
           string | string[]
@@ -662,9 +666,97 @@ export function ProductForm({ productId }: ProductFormProps) {
                               disabled={loading}
                               placeholder="Product description"
                               {...field}
-                              value={field.value || ""}
                             />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="features"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Features</FormLabel>
+                          <FormControl>
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {field.value && field.value.length > 0 ? (
+                                  field.value.map((feature, index) => (
+                                    <Badge
+                                      key={index}
+                                      variant="secondary"
+                                      className="px-2.5 py-1"
+                                    >
+                                      {feature}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newFeatures = [...field.value];
+                                          newFeatures.splice(index, 1);
+                                          form.setValue(
+                                            "features",
+                                            newFeatures
+                                          );
+                                        }}
+                                        className="ml-1 text-muted-foreground hover:text-foreground"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </button>
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">
+                                    No features added yet
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="Add a feature"
+                                  value={featureInput}
+                                  onChange={(e) =>
+                                    setFeatureInput(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (
+                                      e.key === "Enter" &&
+                                      featureInput.trim()
+                                    ) {
+                                      e.preventDefault();
+                                      const newFeatures = [
+                                        ...field.value,
+                                        featureInput.trim(),
+                                      ];
+                                      form.setValue("features", newFeatures);
+                                      setFeatureInput("");
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => {
+                                    if (featureInput.trim()) {
+                                      const newFeatures = [
+                                        ...field.value,
+                                        featureInput.trim(),
+                                      ];
+                                      form.setValue("features", newFeatures);
+                                      setFeatureInput("");
+                                    }
+                                  }}
+                                >
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormDescription>
+                            Add product features that will be displayed on the
+                            product page
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -678,15 +770,10 @@ export function ProductForm({ productId }: ProductFormProps) {
                           <FormControl>
                             <Textarea
                               disabled={loading}
-                              placeholder="Brief product description for cards"
+                              placeholder="Brief product description for product cards"
                               {...field}
-                              value={field.value || ""}
-                              className="h-20"
                             />
                           </FormControl>
-                          <FormDescription>
-                            A brief description shown on product cards
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
