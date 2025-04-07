@@ -14,12 +14,6 @@ export const db = drizzle(pool, {
   casing: "snake_case",
 });
 
-// Debug logging only in development, but with proper type handling
-if (process.env.NODE_ENV !== "production") {
-  // Use console directly for debugging SQL queries
-  console.log("SQL debugging enabled");
-}
-
 export async function openConnection() {
   const client = new Client({ connectionString: config.DB_URL });
   await client.connect();
