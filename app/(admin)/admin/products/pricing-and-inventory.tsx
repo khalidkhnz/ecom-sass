@@ -49,7 +49,7 @@ export default function PricingAndInventoryForm({
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>Price (Tax Included)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -59,6 +59,9 @@ export default function PricingAndInventoryForm({
                     {...field}
                   />
                 </FormControl>
+                <FormDescription>
+                  Final price that customers will pay (tax inclusive)
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -93,7 +96,7 @@ export default function PricingAndInventoryForm({
             name="discountPrice"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Discount Price</FormLabel>
+                <FormLabel>Discount Price (Tax Included)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -104,7 +107,9 @@ export default function PricingAndInventoryForm({
                     value={field.value || ""}
                   />
                 </FormControl>
-                <FormDescription>Special sale price (optional)</FormDescription>
+                <FormDescription>
+                  Special sale price with tax included
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -250,6 +255,178 @@ export default function PricingAndInventoryForm({
 
       <div className="space-y-6">
         <div className="space-y-4">
+          <Heading title="Tax Information" size="sm" />
+          <FormField
+            control={form.control}
+            name="taxable"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 mb-6">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Product is Taxable</FormLabel>
+                  <FormDescription>
+                    If unchecked, no tax will be applied to this product
+                  </FormDescription>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {form.watch("taxable") && (
+            <>
+              <FormField
+                control={form.control}
+                name="taxType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Type</FormLabel>
+                    <Select
+                      disabled={loading}
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tax type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="vat">VAT</SelectItem>
+                        <SelectItem value="gst">GST</SelectItem>
+                        <SelectItem value="sales">Sales Tax</SelectItem>
+                        <SelectItem value="service">Service Tax</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Type of tax applied to this product
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Rate (%)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        disabled={loading}
+                        placeholder="20"
+                        step="0.01"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Percentage rate of tax (e.g., 20 for 20% VAT)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxClass"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Class</FormLabel>
+                    <Select
+                      disabled={loading}
+                      onValueChange={field.onChange}
+                      value={field.value || "standard"}
+                      defaultValue={field.value || "standard"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tax class" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="reduced">Reduced Rate</SelectItem>
+                        <SelectItem value="zero">Zero Rate</SelectItem>
+                        <SelectItem value="exempt">Tax Exempt</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Classification for tax purposes
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxDetails.name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={loading}
+                        placeholder="e.g., UK VAT, California Sales Tax"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormDescription>Specific name of the tax</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="taxDetails.description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Description</FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={loading}
+                        placeholder="e.g., Standard rate VAT"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Additional details about the tax
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Hidden but always set to true */}
+              <input
+                type="hidden"
+                {...form.register("taxDetails.includedInPrice")}
+                value="true"
+              />
+              <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950 rounded border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Note:</strong> All prices in this store include tax.
+                  The price you enter is the final price customers will see.
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="space-y-4 mt-8">
           <Heading title="Visibility & Status" size="sm" />
           <CustomFormSelectField
             form={form}

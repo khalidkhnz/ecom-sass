@@ -73,7 +73,7 @@ export default function AddVariantDialog({
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="variant-price" className="text-right">
-              Price
+              Price (Tax Included)
             </Label>
             <Input
               id="variant-price"
@@ -91,6 +91,9 @@ export default function AddVariantDialog({
               className="col-span-3"
             />
           </div>
+          <p className="text-xs text-muted-foreground mt-1 ml-24">
+            Enter the final price including tax that customers will pay
+          </p>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="variant-inventory" className="text-right">

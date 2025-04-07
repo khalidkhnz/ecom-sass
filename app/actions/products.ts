@@ -57,6 +57,15 @@ const productSchema = z.object({
   visibility: z.boolean().default(true),
   taxable: z.boolean().default(true),
   taxClass: z.string().optional(),
+  taxRate: z.coerce.number().min(0).optional(),
+  taxType: z.enum(["vat", "gst", "sales", "service", "custom"]).default("vat"),
+  taxDetails: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      includedInPrice: z.boolean().default(true),
+    })
+    .optional(),
   weight: z.coerce.number().optional(),
   dimensions: z
     .object({
@@ -288,6 +297,17 @@ export async function createProduct(data: ProductFormValues) {
     // Validate data
     const validatedData = productSchema.parse(data);
 
+    // Ensure tax details has includedInPrice set to true
+    if (validatedData.taxDetails) {
+      validatedData.taxDetails.includedInPrice = true;
+    } else {
+      validatedData.taxDetails = {
+        name: "",
+        description: "",
+        includedInPrice: true,
+      };
+    }
+
     const slugExists = await db.query.products.findFirst({
       where: eq(products.slug, validatedData.slug),
     });
@@ -338,6 +358,13 @@ export async function createProduct(data: ProductFormValues) {
       visibility: validatedData.visibility,
       taxable: validatedData.taxable,
       taxClass: validatedData.taxClass || "standard",
+      taxRate: validatedData.taxRate ? String(validatedData.taxRate) : "0",
+      taxType: validatedData.taxType || "vat",
+      taxDetails: validatedData.taxDetails || {
+        name: "",
+        description: "",
+        includedInPrice: true,
+      },
       weight: validatedData.weight ? String(validatedData.weight) : null,
       dimensions: validatedData.dimensions || {
         length: 0,
@@ -408,6 +435,17 @@ export async function updateProduct(id: string, data: ProductFormValues) {
     // Validate data
     const validatedData = productSchema.parse(data);
 
+    // Ensure tax details has includedInPrice set to true
+    if (validatedData.taxDetails) {
+      validatedData.taxDetails.includedInPrice = true;
+    } else {
+      validatedData.taxDetails = {
+        name: "",
+        description: "",
+        includedInPrice: true,
+      };
+    }
+
     // Check if product exists
     const existingProduct = await db.query.products.findFirst({
       where: eq(products.id, id),
@@ -474,6 +512,13 @@ export async function updateProduct(id: string, data: ProductFormValues) {
         visibility: validatedData.visibility,
         taxable: validatedData.taxable,
         taxClass: validatedData.taxClass || "standard",
+        taxRate: validatedData.taxRate ? String(validatedData.taxRate) : "0",
+        taxType: validatedData.taxType || "vat",
+        taxDetails: validatedData.taxDetails || {
+          name: "",
+          description: "",
+          includedInPrice: true,
+        },
         weight: validatedData.weight ? String(validatedData.weight) : null,
         dimensions: validatedData.dimensions || {
           length: 0,

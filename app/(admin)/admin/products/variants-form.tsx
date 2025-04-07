@@ -15,169 +15,149 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash, Pencil, Plus, AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import AddVariantDialog from "./add-variant-dialog";
 
 export default function VariantsForm({
   form,
-  setEditingVariant,
-  setIsVariantDialogOpen,
+  loading,
 }: {
   form: UseFormReturn<FormValues>;
-  setEditingVariant: (variant: any) => void;
-  setIsVariantDialogOpen: (open: boolean) => void;
+  loading: boolean;
 }) {
+  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [editingVariant, setEditingVariant] = useState<any>(null);
+
+  const variants = form.watch("variants") || [];
+
+  const handleDeleteVariant = (index: number) => {
+    const currentVariants = form.getValues("variants");
+    if (!currentVariants) return;
+
+    const newVariants = [...currentVariants];
+    newVariants.splice(index, 1);
+    form.setValue("variants", newVariants);
+  };
+
+  const handleEdit = (index: number) => {
+    const variant = variants[index];
+    setEditingVariant({ ...variant, index });
+    setIsVariantDialogOpen(true);
+  };
+
+  const handleAddVariant = () => {
+    setEditingVariant({
+      name: "",
+      sku: "",
+      price: "",
+      inventory: 0,
+      images: [],
+      default: variants.length === 0, // First variant is default
+    });
+    setIsVariantDialogOpen(true);
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <Heading title="Product Variants" size="sm" />
-          {form?.watch("variants") &&
-            Array.isArray(form?.watch("variants")) &&
-            (form?.watch?.("variants")?.length || 0) > 0 && (
-              <div className="space-y-4">
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Default</TableHead>
-                        <TableHead>Delete</TableHead>
-                        <TableHead>Edit</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {form.watch("variants") &&
-                        form
-                          ?.watch("variants")
-                          ?.map((variant: any, index: number) => (
-                            <TableRow key={variant.id || index}>
-                              <TableCell>{variant.name}</TableCell>
-                              <TableCell>{variant.sku}</TableCell>
-                              <TableCell>{variant.price || "-"}</TableCell>
-                              <TableCell>{variant.inventory || "0"}</TableCell>
-                              <TableCell>
-                                <Checkbox
-                                  checked={variant.default || false}
-                                  onCheckedChange={(checked) => {
-                                    const currentVariants =
-                                      form.getValues("variants");
-                                    if (!currentVariants) return;
-
-                                    const variants = [...currentVariants];
-
-                                    // Update default status for this variant
-                                    variants[index] = {
-                                      ...variants[index],
-                                      default: !!checked,
-                                    };
-
-                                    // If setting this one as default, unset others
-                                    if (checked) {
-                                      variants.forEach((v, i) => {
-                                        if (i !== index) {
-                                          variants[i] = {
-                                            ...variants[i],
-                                            default: false,
-                                          };
-                                        }
-                                      });
-                                    }
-
-                                    form.setValue("variants", variants);
-                                  }}
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const currentVariants =
-                                      form.getValues("variants");
-                                    if (!currentVariants) return;
-
-                                    const variants = [...currentVariants];
-                                    variants.splice(index, 1);
-                                    form.setValue("variants", variants);
-                                  }}
-                                >
-                                  <Trash className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingVariant({
-                                      ...variant,
-                                      index,
-                                    });
-                                    setIsVariantDialogOpen(true);
-                                  }}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            )}
-
-          <Button
-            type="button"
-            onClick={() => {
-              const currentVariants = form.getValues("variants");
-              const variants = currentVariants ? [...currentVariants] : [];
-
-              const newVariant = {
-                name: "",
-                sku: "",
-                price: undefined,
-                inventory: 0,
-                default: variants.length === 0, // First variant is default
-                images: [],
-              };
-
-              variants.push(newVariant);
-              form.setValue("variants", variants);
-
-              // Open dialog to edit the new variant
-              setEditingVariant({
-                ...newVariant,
-                index: variants.length - 1,
-              });
-              setIsVariantDialogOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Variant
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Heading title="Product Variants" size="sm" />
+        <Button
+          onClick={handleAddVariant}
+          type="button"
+          size="sm"
+          disabled={loading}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Variant
+        </Button>
       </div>
 
-      <div className="space-y-6">
-        <div className="space-y-4">
-          <Heading title="Variant Details" size="sm" />
-          <p className="text-sm text-muted-foreground">
-            Select a variant from the list to edit its details, or click "Add
-            Variant" to create a new one.
-          </p>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Important</AlertTitle>
-            <AlertDescription>
-              Each variant must have a unique SKU. If a variant has a price, it
-              will override the main product price for that variant.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
+      {variants.length === 0 ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No variants added</AlertTitle>
+          <AlertDescription>
+            Add variants if this product comes in different sizes, colors, or
+            other options.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Price (Tax Included)</TableHead>
+              <TableHead>Inventory</TableHead>
+              <TableHead>Default</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {variants.map((variant, index) => (
+              <TableRow key={variant.id || index}>
+                <TableCell>{variant.name}</TableCell>
+                <TableCell>{variant.sku}</TableCell>
+                <TableCell>{variant.price || "-"}</TableCell>
+                <TableCell>{variant.inventory || "0"}</TableCell>
+                <TableCell>
+                  <Checkbox
+                    checked={variant.default}
+                    onCheckedChange={(checked) => {
+                      const currentVariants = form.getValues("variants");
+                      if (!currentVariants) return;
+
+                      // If setting this one as default, uncheck all others
+                      if (checked) {
+                        const newVariants = currentVariants.map((v, i) => ({
+                          ...v,
+                          default: i === index,
+                        }));
+                        form.setValue("variants", newVariants);
+                      } else {
+                        // Just update this one
+                        const newVariants = [...currentVariants];
+                        newVariants[index].default = !!checked;
+                        form.setValue("variants", newVariants);
+                      }
+                    }}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(index)}
+                      type="button"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDeleteVariant(index)}
+                      type="button"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      <AddVariantDialog
+        isVariantDialogOpen={isVariantDialogOpen}
+        setIsVariantDialogOpen={setIsVariantDialogOpen}
+        editingVariant={editingVariant}
+        setEditingVariant={setEditingVariant}
+        form={form}
+      />
     </div>
   );
 }

@@ -37,6 +37,15 @@ export const shippingClassEnum = pgEnum("shipping_class", [
   "heavy",
 ]);
 
+// Define tax types
+export const taxTypeEnum = pgEnum("tax_type", [
+  "vat",
+  "gst",
+  "sales",
+  "service",
+  "custom",
+]);
+
 // Brands
 export const brands = pgTable(
   "brands",
@@ -171,6 +180,13 @@ export const products = pgTable(
     ),
     taxable: boolean().default(true),
     taxClass: text().default("standard"),
+    taxRate: numeric("tax_rate", { precision: 5, scale: 2 }).default("0.00"),
+    taxType: text().default("vat"),
+    taxDetails: jsonb().default({
+      name: "",
+      description: "",
+      includedInPrice: true,
+    }),
     weight: numeric("weight", { precision: 10, scale: 2 }).default("0.00"),
     dimensions: jsonb().default({
       length: "0.00",

@@ -81,6 +81,18 @@ const formSchema = z.object({
   visibility: z.boolean().default(true),
   taxable: z.boolean().default(true),
   taxClass: z.string().optional(),
+  taxRate: z.coerce
+    .number()
+    .min(0, { message: "Tax rate cannot be negative" })
+    .optional(),
+  taxType: z.enum(["vat", "gst", "sales", "service", "custom"]).default("vat"),
+  taxDetails: z
+    .object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      includedInPrice: z.boolean().default(true),
+    })
+    .optional(),
   weight: z.coerce.number().optional(),
   dimensions: z
     .object({
@@ -177,6 +189,13 @@ export function ProductForm({ productId }: ProductFormProps) {
       visibility: true,
       taxable: true,
       taxClass: "standard",
+      taxRate: 0,
+      taxType: "vat",
+      taxDetails: {
+        name: "",
+        description: "",
+        includedInPrice: true,
+      },
       weight: undefined,
       dimensions: {
         length: 0,
@@ -253,6 +272,13 @@ export function ProductForm({ productId }: ProductFormProps) {
             ? initialData.taxable
             : true,
         taxClass: initialData.taxClass || "standard",
+        taxRate: initialData.taxRate || 0,
+        taxType: initialData.taxType || "vat",
+        taxDetails: initialData.taxDetails || {
+          name: "",
+          description: "",
+          includedInPrice: true,
+        },
         weight: initialData.weight ? Number(initialData.weight) : undefined,
         dimensions: initialData.dimensions || {
           length: 0,
@@ -622,11 +648,7 @@ export function ProductForm({ productId }: ProductFormProps) {
               <ShippingAndDeliveryForm form={form} loading={loading} />
             </TabsContent>
             <TabsContent value="variants">
-              <VariantsForm
-                form={form}
-                setEditingVariant={setEditingVariant}
-                setIsVariantDialogOpen={setIsVariantDialogOpen}
-              />
+              <VariantsForm form={form} loading={loading} />
             </TabsContent>
           </Tabs>
           <Button disabled={loading} className="ml-auto" type="submit">

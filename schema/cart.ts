@@ -56,6 +56,14 @@ export type Cart = {
       discountPrice: string | null;
       images: string[];
       slug: string;
+      taxable?: boolean;
+      taxRate?: string | number;
+      taxType?: string;
+      taxDetails?: {
+        name: string | null;
+        description: string | null;
+        includedInPrice: boolean;
+      };
     };
     variant?: {
       id: string;

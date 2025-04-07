@@ -71,6 +71,14 @@ type CartItemWithDetails = {
     discountPrice: string | null;
     images: string[];
     slug: string;
+    taxable: boolean;
+    taxRate: string;
+    taxType: string;
+    taxDetails: {
+      name: string | null;
+      description: string | null;
+      includedInPrice: boolean;
+    };
   };
   variant: {
     id: string;
@@ -99,6 +107,10 @@ export async function getCart(): Promise<Cart> {
             discountPrice: true,
             images: true,
             slug: true,
+            taxable: true,
+            taxRate: true,
+            taxType: true,
+            taxDetails: true,
           },
         },
         variant: {
@@ -459,6 +471,10 @@ export async function getLocalCartItemDetails(
         images: true,
         slug: true,
         inventory: true,
+        taxable: true,
+        taxRate: true,
+        taxType: true,
+        taxDetails: true,
       },
     });
 
@@ -512,6 +528,14 @@ export async function getLocalCartItemDetails(
           discountPrice: null,
           images: [],
           slug: "",
+          taxable: true,
+          taxRate: "0",
+          taxType: "vat",
+          taxDetails: {
+            name: null,
+            description: null,
+            includedInPrice: true,
+          },
         },
         variant,
       };
@@ -529,6 +553,14 @@ export async function getLocalCartItemDetails(
         discountPrice: null,
         images: [],
         slug: "",
+        taxable: true,
+        taxRate: "0",
+        taxType: "vat",
+        taxDetails: {
+          name: null,
+          description: null,
+          includedInPrice: true,
+        },
       },
       variant: null,
     }));

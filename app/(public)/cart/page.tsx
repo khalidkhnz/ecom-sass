@@ -65,6 +65,98 @@ export default function CartPage() {
     );
   }
 
+  // Define tax type interfaces
+  interface TaxInfo {
+    rate: number;
+    amount: number;
+    label: string;
+  }
+
+  interface TaxSummary {
+    [key: string]: TaxInfo;
+  }
+
+  // Define product interface with tax properties
+  interface ProductWithTax {
+    id: string;
+    name: string;
+    price: string;
+    discountPrice: string | null;
+    images: string[];
+    slug: string;
+    taxable?: boolean;
+    taxRate?: string | number;
+    taxType?: string;
+    taxDetails?: {
+      name: string | null;
+      description: string | null;
+      includedInPrice: boolean;
+    };
+  }
+
+  // Calculate tax summary
+  const taxSummary: TaxSummary = cart.items.reduce((acc: TaxSummary, item) => {
+    // Get the product and potential variant with appropriate typing
+    const product = item.product as unknown as ProductWithTax;
+    const variant = item.variant;
+
+    // Use product price or variant price
+    const unitPrice = variant?.price
+      ? parseFloat(String(variant.price))
+      : product?.discountPrice
+      ? parseFloat(String(product.discountPrice))
+      : parseFloat(String(product?.price || "0"));
+
+    const itemTotal = unitPrice * item.quantity;
+
+    // Get tax information from the product
+    const isTaxable = product.taxable !== undefined ? product.taxable : true;
+    const taxRate =
+      product.taxRate !== undefined ? parseFloat(String(product.taxRate)) : 0;
+    const taxType = product.taxType || "vat";
+
+    if (isTaxable && taxRate > 0) {
+      // Since price is tax-inclusive, we need to calculate what portion is tax
+      const taxAmount = itemTotal - itemTotal / (1 + taxRate / 100);
+
+      // Add to the accumulated tax for this type
+      if (!acc[taxType]) {
+        acc[taxType] = {
+          rate: taxRate,
+          amount: 0,
+          label: getTaxLabel(taxType),
+        };
+      }
+
+      acc[taxType].amount += taxAmount;
+    }
+
+    return acc;
+  }, {});
+
+  // Convert the tax summary object to an array for rendering
+  const taxBreakdown = Object.entries(taxSummary).map(([type, info]) => ({
+    type,
+    rate: info.rate,
+    amount: info.amount,
+    label: info.label,
+  }));
+
+  // Total tax amount
+  const totalTaxAmount = taxBreakdown.reduce((sum, tax) => sum + tax.amount, 0);
+
+  // Helper function to get readable tax label
+  function getTaxLabel(taxType: string): string {
+    const labels: { [key: string]: string } = {
+      vat: "VAT",
+      gst: "GST",
+      sales: "Sales Tax",
+      service: "Service Tax",
+      custom: "Tax",
+    };
+    return labels[taxType] || "Tax";
+  }
+
   return (
     <Container>
       <div className="py-10">
@@ -106,7 +198,7 @@ export default function CartPage() {
                         ? item.product.images[0]
                         : "https://placehold.co/600x600/f3f4f6/a1a1aa?text=No+Image";
 
-                    // Determine price to display
+                    // Determine price to display (already includes tax)
                     const unitPrice = item.variant?.price
                       ? parseFloat(String(item.variant.price))
                       : item.product?.discountPrice
@@ -148,6 +240,9 @@ export default function CartPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           {formatPrice(unitPrice)}
+                          <div className="text-xs text-muted-foreground">
+                            Inc. tax
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center">
@@ -215,17 +310,44 @@ export default function CartPage() {
               <h2 className="text-xl font-bold mb-4">Order Summary</h2>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-muted-foreground">
+                    Subtotal (inc. tax)
+                  </span>
                   <span className="font-medium">
                     {formatPrice(cart.subtotal)}
                   </span>
                 </div>
+
+                {/* Only show tax breakdown if there are actual tax amounts */}
+                {taxBreakdown.length > 0 && totalTaxAmount > 0.01 && (
+                  <>
+                    <div className="pt-2 pb-1">
+                      <h3 className="text-sm font-medium text-muted-foreground">
+                        Tax Breakdown:
+                      </h3>
+                    </div>
+                    {taxBreakdown.map((tax) => (
+                      <div
+                        key={tax.type}
+                        className="flex justify-between text-sm pl-4"
+                      >
+                        <span className="text-muted-foreground">
+                          {tax.label} ({tax.rate.toFixed(2)}%)
+                        </span>
+                        <span className="font-medium">
+                          {formatPrice(tax.amount)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between text-sm font-medium">
+                      <span className="text-muted-foreground">Total Tax</span>
+                      <span>{formatPrice(totalTaxAmount)}</span>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">Calculated at checkout</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
                   <span className="font-medium">Calculated at checkout</span>
                 </div>
                 <Separator />
@@ -240,7 +362,8 @@ export default function CartPage() {
                 </Button>
 
                 <div className="text-xs text-center text-muted-foreground mt-4">
-                  Taxes and shipping calculated at checkout
+                  All prices include applicable taxes. Shipping will be
+                  calculated at checkout.
                 </div>
               </div>
             </Card>
