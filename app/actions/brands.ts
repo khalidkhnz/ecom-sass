@@ -7,6 +7,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, sql, count, and, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 
 // Schema for brand validation
 const brandSchema = z.object({
@@ -149,6 +151,9 @@ export async function getBrandBySlug(slug: string) {
 // Create a new brand
 export async function createBrand(data: BrandFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = brandSchema.parse(data);
 
@@ -180,6 +185,10 @@ export async function createBrand(data: BrandFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error creating brand:", error);
     return { error: "Failed to create brand" };
   }
@@ -188,6 +197,9 @@ export async function createBrand(data: BrandFormValues) {
 // Update a brand
 export async function updateBrand(id: string, data: BrandFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = brandSchema.parse(data);
 
@@ -200,7 +212,7 @@ export async function updateBrand(id: string, data: BrandFormValues) {
       return { error: "Brand not found" };
     }
 
-    // Check if slug exists (if changed)
+    // Check if slug exists for a different brand
     if (validatedData.slug !== existingBrand.slug) {
       const slugExists = await db.query.brands.findFirst({
         where: eq(brands.slug, validatedData.slug),
@@ -231,6 +243,10 @@ export async function updateBrand(id: string, data: BrandFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating brand:", error);
     return { error: "Failed to update brand" };
   }
@@ -239,29 +255,42 @@ export async function updateBrand(id: string, data: BrandFormValues) {
 // Delete a brand
 export async function deleteBrand(id: string) {
   try {
-    // Check if brand exists and get associated products
-    const brandProducts = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(eq(products.brandId, id));
+    // Authorize admin access
+    await authorize("admin");
 
-    const productCount = brandProducts.length;
+    // Check if brand exists
+    const existingBrand = await db.query.brands.findFirst({
+      where: eq(brands.id, id),
+    });
+
+    if (!existingBrand) {
+      return { error: "Brand not found" };
+    }
+
+    // Check if any products are using this brand
+    const brandProducts = await db.query.products.findMany({
+      where: eq(products.brandId, id),
+      limit: 1,
+    });
+
+    if (brandProducts && brandProducts.length > 0) {
+      return {
+        error:
+          "This brand cannot be deleted because it is associated with one or more products",
+      };
+    }
 
     // Delete brand
     await db.delete(brands).where(eq(brands.id, id));
 
-    // Update any associated products to remove the brand
-    if (productCount > 0) {
-      await db
-        .update(products)
-        .set({ brandId: null })
-        .where(eq(products.brandId, id));
-    }
-
     revalidatePath("/admin/brands");
 
-    return { success: true, productCount };
+    return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error deleting brand:", error);
     return { error: "Failed to delete brand" };
   }
@@ -270,10 +299,23 @@ export async function deleteBrand(id: string) {
 // Toggle brand featured status
 export async function toggleBrandFeatured(id: string, featured: boolean) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
+    // Check if brand exists
+    const existingBrand = await db.query.brands.findFirst({
+      where: eq(brands.id, id),
+    });
+
+    if (!existingBrand) {
+      return { error: "Brand not found" };
+    }
+
+    // Update brand
     await db
       .update(brands)
       .set({
-        featured: !featured,
+        featured,
         updatedAt: new Date(),
       })
       .where(eq(brands.id, id));
@@ -282,7 +324,11 @@ export async function toggleBrandFeatured(id: string, featured: boolean) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error toggling brand featured status:", error);
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
+    console.error("Error updating brand:", error);
     return { error: "Failed to update brand" };
   }
 }

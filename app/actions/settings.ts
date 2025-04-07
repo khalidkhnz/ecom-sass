@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { settings } from "@/schema/settings";
 import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 import { z } from "zod";
 
 // Define validation schemas
@@ -116,11 +117,8 @@ export async function updateGeneralSettings(
   formData: GeneralSettingsFormValues
 ) {
   try {
-    const user = await getCurrentUser();
-
-    if (!user || !user.isAdmin) {
-      throw new Error("Unauthorized: Admin access required");
-    }
+    // Authorize admin access
+    await authorize("admin");
 
     // Validate data
     const validatedData = generalSettingsSchema.parse(formData);
@@ -160,9 +158,18 @@ export async function updateGeneralSettings(
     return { success: true };
   } catch (error) {
     console.error("Error updating general settings:", error);
+
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors };
     }
+
+    if (error instanceof Error && error.message === "unauthorized") {
+      return {
+        success: false,
+        error: "You are not authorized to perform this action",
+      };
+    }
+
     return { success: false, error: "Failed to update general settings" };
   }
 }
@@ -170,11 +177,8 @@ export async function updateGeneralSettings(
 // Update store settings
 export async function updateStoreSettings(formData: StoreSettingsFormValues) {
   try {
-    const user = await getCurrentUser();
-
-    if (!user || !user.isAdmin) {
-      throw new Error("Unauthorized: Admin access required");
-    }
+    // Authorize admin access
+    await authorize("admin");
 
     // Validate data
     const validatedData = storeSettingsSchema.parse(formData);
@@ -222,9 +226,18 @@ export async function updateStoreSettings(formData: StoreSettingsFormValues) {
     return { success: true };
   } catch (error) {
     console.error("Error updating store settings:", error);
+
     if (error instanceof z.ZodError) {
       return { success: false, error: error.errors };
     }
+
+    if (error instanceof Error && error.message === "unauthorized") {
+      return {
+        success: false,
+        error: "You are not authorized to perform this action",
+      };
+    }
+
     return { success: false, error: "Failed to update store settings" };
   }
 }

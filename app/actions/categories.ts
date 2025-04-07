@@ -7,6 +7,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, sql, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 
 // Schema for category validation
 const categorySchema = z.object({
@@ -132,6 +134,9 @@ export async function getCategoryById(id: string) {
 // Create a new category
 export async function createCategory(data: CategoryFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = categorySchema.parse(data);
 
@@ -162,6 +167,10 @@ export async function createCategory(data: CategoryFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error creating category:", error);
     return { error: "Failed to create category" };
   }
@@ -170,6 +179,9 @@ export async function createCategory(data: CategoryFormValues) {
 // Update an existing category
 export async function updateCategory(id: string, data: CategoryFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = categorySchema.parse(data);
 
@@ -200,6 +212,10 @@ export async function updateCategory(id: string, data: CategoryFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating category:", error);
     return { error: "Failed to update category" };
   }
@@ -208,29 +224,41 @@ export async function updateCategory(id: string, data: CategoryFormValues) {
 // Delete a category
 export async function deleteCategory(id: string) {
   try {
-    // Check if category exists and get associated products
-    const categoryProducts = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(eq(products.categoryId, id));
+    // Authorize admin access
+    await authorize("admin");
 
-    const productCount = categoryProducts.length;
+    // Check if category exists
+    const existingCategory = await db.query.categories.findFirst({
+      where: eq(categories.id, id),
+    });
+
+    if (!existingCategory) {
+      return { error: "Category not found" };
+    }
+
+    // Check if products are associated with this category
+    const categoryProducts = await db.query.products.findMany({
+      where: eq(products.categoryId, id),
+      limit: 1,
+    });
+
+    if (categoryProducts && categoryProducts.length > 0) {
+      return {
+        error: "Cannot delete category that has products associated with it",
+      };
+    }
 
     // Delete category
     await db.delete(categories).where(eq(categories.id, id));
 
-    // Update any associated products to remove the category
-    if (productCount > 0) {
-      await db
-        .update(products)
-        .set({ categoryId: null })
-        .where(eq(products.categoryId, id));
-    }
-
     revalidatePath("/admin/categories");
 
-    return { success: true, productCount };
+    return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error deleting category:", error);
     return { error: "Failed to delete category" };
   }

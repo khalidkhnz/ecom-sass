@@ -8,6 +8,8 @@ import { eq, desc, sql, inArray, and, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 
 // Schema for product validation
 const productSchema = z.object({
@@ -280,6 +282,9 @@ export async function getProductBySlug(slug: string) {
 // Create a new product
 export async function createProduct(data: ProductFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = productSchema.parse(data);
 
@@ -385,6 +390,10 @@ export async function createProduct(data: ProductFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error creating product:", error);
     return { error: "Failed to create product" };
   }
@@ -393,6 +402,9 @@ export async function createProduct(data: ProductFormValues) {
 // Update an existing product
 export async function updateProduct(id: string, data: ProductFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = productSchema.parse(data);
 
@@ -555,6 +567,10 @@ export async function updateProduct(id: string, data: ProductFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating product:", error);
     return { error: "Failed to update product" };
   }
@@ -563,6 +579,21 @@ export async function updateProduct(id: string, data: ProductFormValues) {
 // Delete a product
 export async function deleteProduct(id: string) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
+    // Check if product exists
+    const existingProduct = await db.query.products.findFirst({
+      where: eq(products.id, id),
+    });
+
+    if (!existingProduct) {
+      return { error: "Product not found" };
+    }
+
+    // Delete product variants first
+    await db.delete(productVariants).where(eq(productVariants.productId, id));
+
     // Delete product
     await db.delete(products).where(eq(products.id, id));
 
@@ -570,6 +601,10 @@ export async function deleteProduct(id: string) {
 
     return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error deleting product:", error);
     return { error: "Failed to delete product" };
   }
@@ -578,10 +613,23 @@ export async function deleteProduct(id: string) {
 // Toggle product featured status
 export async function toggleProductFeatured(id: string, featured: boolean) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
+    // Check if product exists
+    const existingProduct = await db.query.products.findFirst({
+      where: eq(products.id, id),
+    });
+
+    if (!existingProduct) {
+      return { error: "Product not found" };
+    }
+
+    // Update product
     await db
       .update(products)
       .set({
-        featured: !featured,
+        featured,
         updatedAt: new Date(),
       })
       .where(eq(products.id, id));
@@ -590,7 +638,11 @@ export async function toggleProductFeatured(id: string, featured: boolean) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error toggling product featured status:", error);
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
+    console.error("Error updating product:", error);
     return { error: "Failed to update product" };
   }
 }
@@ -601,6 +653,19 @@ export async function updateProductStatus(
   status: "draft" | "active" | "archived"
 ) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
+    // Check if product exists
+    const existingProduct = await db.query.products.findFirst({
+      where: eq(products.id, id),
+    });
+
+    if (!existingProduct) {
+      return { error: "Product not found" };
+    }
+
+    // Update product
     await db
       .update(products)
       .set({
@@ -613,6 +678,10 @@ export async function updateProductStatus(
 
     return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating product status:", error);
     return { error: "Failed to update product status" };
   }

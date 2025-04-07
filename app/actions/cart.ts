@@ -14,6 +14,7 @@ import {
 } from "@/zod/cart";
 import type { Cart } from "@/schema/cart";
 import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 
 // Helper to get or create cart ID
 async function getCartId(): Promise<string> {
@@ -158,207 +159,264 @@ export async function getCart(): Promise<Cart> {
 export async function addToCart(
   input: FormData | { productId: string; variantId?: string; quantity?: number }
 ) {
-  let data: Record<string, any>;
+  try {
+    let data: Record<string, any>;
 
-  if (input instanceof FormData) {
-    data = Object.fromEntries(input);
-    data.quantity = data.quantity ? parseInt(String(data.quantity)) : 1;
-  } else {
-    data = input;
-  }
+    if (input instanceof FormData) {
+      data = Object.fromEntries(input);
+      data.quantity = data.quantity ? parseInt(String(data.quantity)) : 1;
+    } else {
+      data = input;
+    }
 
-  // Validate input
-  const { productId, variantId, quantity } = addToCartSchema.parse(data);
+    // Validate input
+    const { productId, variantId, quantity } = addToCartSchema.parse(data);
 
-  // Check if product exists and is in stock
-  const product = await db.query.products.findFirst({
-    where: eq(products.id, productId),
-    columns: {
-      inventory: true,
-    },
-  });
-
-  if (!product || parseInt(String(product.inventory)) < 1) {
-    throw new Error("Product is out of stock");
-  }
-
-  // Check variant if provided
-  if (variantId) {
-    const variant = await db.query.productVariants.findFirst({
-      where: eq(productVariants.id, variantId),
+    // Check if product exists and is in stock
+    const product = await db.query.products.findFirst({
+      where: eq(products.id, productId),
       columns: {
         inventory: true,
       },
     });
 
-    if (
-      !variant ||
-      (variant.inventory && parseInt(String(variant.inventory)) < 1)
-    ) {
-      throw new Error("Selected variant is out of stock");
+    if (!product || parseInt(String(product.inventory)) < 1) {
+      throw new Error("Product is out of stock");
     }
-  }
 
-  const cartId = await getCartId();
+    // Check variant if provided
+    if (variantId) {
+      const variant = await db.query.productVariants.findFirst({
+        where: eq(productVariants.id, variantId),
+        columns: {
+          inventory: true,
+        },
+      });
 
-  // Check if item already in cart
-  const existingItem = await db.query.cartItems.findFirst({
-    where: and(
-      eq(cartItems.cartId, cartId),
-      eq(cartItems.productId, productId),
-      variantId
-        ? eq(cartItems.variantId, variantId)
-        : sql`${cartItems.variantId} IS NULL`
-    ),
-  });
+      if (
+        !variant ||
+        (variant.inventory && parseInt(String(variant.inventory)) < 1)
+      ) {
+        throw new Error("Selected variant is out of stock");
+      }
+    }
 
-  if (existingItem) {
-    // Update quantity if item exists
-    await db
-      .update(cartItems)
-      .set({
-        quantity: existingItem.quantity + quantity,
-        updatedAt: new Date(),
-      })
-      .where(eq(cartItems.id, existingItem.id));
-  } else {
-    // Add new item to cart
-    await db.insert(cartItems).values({
-      id: createId(),
-      cartId,
-      productId,
-      variantId: variantId || null,
-      quantity,
+    const cartId = await getCartId();
+
+    // Check if item already in cart
+    const existingItem = await db.query.cartItems.findFirst({
+      where: and(
+        eq(cartItems.cartId, cartId),
+        eq(cartItems.productId, productId),
+        variantId
+          ? eq(cartItems.variantId, variantId)
+          : sql`${cartItems.variantId} IS NULL`
+      ),
     });
-  }
 
-  revalidatePath("/cart");
-  revalidatePath("/products/[productId]");
+    if (existingItem) {
+      // Update quantity if item exists
+      await db
+        .update(cartItems)
+        .set({
+          quantity: existingItem.quantity + quantity,
+          updatedAt: new Date(),
+        })
+        .where(eq(cartItems.id, existingItem.id));
+    } else {
+      // Add new item to cart
+      await db.insert(cartItems).values({
+        id: createId(),
+        cartId,
+        productId,
+        variantId: variantId || null,
+        quantity,
+      });
+    }
+
+    revalidatePath("/cart");
+    revalidatePath("/products/[productId]");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding item to cart:", error);
+
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+
+    return { error: "Failed to add item to cart" };
+  }
 }
 
 // Update cart item quantity
 export async function updateCartItem(
   input: FormData | { itemId: string; quantity: number }
 ) {
-  let data: Record<string, any>;
+  try {
+    let data: Record<string, any>;
 
-  if (input instanceof FormData) {
-    data = Object.fromEntries(input);
-    data.quantity = parseInt(String(data.quantity));
-  } else {
-    data = input;
+    if (input instanceof FormData) {
+      data = Object.fromEntries(input);
+      data.quantity = parseInt(String(data.quantity));
+    } else {
+      data = input;
+    }
+
+    // Validate input
+    const { itemId, quantity } = updateCartItemSchema.parse(data);
+
+    const cartId = await getCartId();
+
+    // Verify item belongs to current cart
+    const item = await db.query.cartItems.findFirst({
+      where: and(eq(cartItems.id, itemId), eq(cartItems.cartId, cartId)),
+    });
+
+    if (!item) {
+      return { error: "Item not found in cart" };
+    }
+
+    if (quantity <= 0) {
+      // Remove the item if quantity is 0 or negative
+      await db.delete(cartItems).where(eq(cartItems.id, itemId));
+    } else {
+      // Update quantity
+      await db
+        .update(cartItems)
+        .set({
+          quantity,
+          updatedAt: new Date(),
+        })
+        .where(eq(cartItems.id, itemId));
+    }
+
+    revalidatePath("/cart");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating cart item:", error);
+    return { error: "Failed to update cart item" };
   }
-
-  // Validate input
-  const { itemId, quantity } = updateCartItemSchema.parse(data);
-
-  const cartId = await getCartId();
-
-  // Verify item belongs to current cart
-  const item = await db.query.cartItems.findFirst({
-    where: and(eq(cartItems.id, itemId), eq(cartItems.cartId, cartId)),
-  });
-
-  if (!item) {
-    throw new Error("Cart item not found");
-  }
-
-  // Update quantity
-  await db
-    .update(cartItems)
-    .set({
-      quantity,
-      updatedAt: new Date(),
-    })
-    .where(eq(cartItems.id, itemId));
-
-  revalidatePath("/cart");
 }
 
 // Remove item from cart
 export async function removeCartItem(input: FormData | { itemId: string }) {
-  let data: Record<string, any>;
+  try {
+    let data: Record<string, any>;
 
-  if (input instanceof FormData) {
-    data = Object.fromEntries(input);
-  } else {
-    data = input;
+    if (input instanceof FormData) {
+      data = Object.fromEntries(input);
+    } else {
+      data = input;
+    }
+
+    // Validate input
+    const { itemId } = removeCartItemSchema.parse(data);
+
+    const cartId = await getCartId();
+
+    // Verify item belongs to current cart
+    const item = await db.query.cartItems.findFirst({
+      where: and(eq(cartItems.id, itemId), eq(cartItems.cartId, cartId)),
+    });
+
+    if (!item) {
+      return { error: "Item not found in cart" };
+    }
+
+    // Delete the item
+    await db.delete(cartItems).where(eq(cartItems.id, itemId));
+
+    revalidatePath("/cart");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error removing cart item:", error);
+    return { error: "Failed to remove cart item" };
   }
-
-  // Validate input
-  const { itemId } = removeCartItemSchema.parse(data);
-
-  const cartId = await getCartId();
-
-  // Verify item belongs to current cart
-  const item = await db.query.cartItems.findFirst({
-    where: and(eq(cartItems.id, itemId), eq(cartItems.cartId, cartId)),
-  });
-
-  if (!item) {
-    throw new Error("Cart item not found");
-  }
-
-  // Delete the item
-  await db.delete(cartItems).where(eq(cartItems.id, itemId));
-
-  revalidatePath("/cart");
 }
 
 // Clear the entire cart
 export async function clearCart() {
-  const cartId = await getCartId();
+  try {
+    const cartId = await getCartId();
 
-  await db.delete(cartItems).where(eq(cartItems.cartId, cartId));
+    await db.delete(cartItems).where(eq(cartItems.cartId, cartId));
 
-  revalidatePath("/cart");
+    revalidatePath("/cart");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    return { error: "Failed to clear cart" };
+  }
 }
 
 // Transfer cart items from one ID to another (for merging guest cart to user cart)
 export async function transferCart(fromCartId: string, toCartId: string) {
-  // Get items from source cart
-  const sourceItems = await db.query.cartItems.findMany({
-    where: eq(cartItems.cartId, fromCartId),
-  });
+  try {
+    // Ensure user is authenticated for this operation
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: "You must be logged in to transfer a cart" };
+    }
 
-  // For each item in source cart
-  for (const item of sourceItems) {
-    // Check if target cart already has this product/variant combination
-    const existingItem = await db.query.cartItems.findFirst({
-      where: and(
-        eq(cartItems.cartId, toCartId),
-        eq(cartItems.productId, item.productId),
-        item.variantId
-          ? eq(cartItems.variantId, item.variantId)
-          : sql`${cartItems.variantId} IS NULL`
-      ),
+    if (toCartId !== session.user.id) {
+      return { error: "Unauthorized cart transfer" };
+    }
+
+    // Get items from source cart
+    const sourceItems = await db.query.cartItems.findMany({
+      where: eq(cartItems.cartId, fromCartId),
     });
 
-    if (existingItem) {
-      // Update quantity in target cart if item exists
-      await db
-        .update(cartItems)
-        .set({
-          quantity: existingItem.quantity + item.quantity,
-          updatedAt: new Date(),
-        })
-        .where(eq(cartItems.id, existingItem.id));
-    } else {
-      // Add new item to target cart
-      await db.insert(cartItems).values({
-        id: createId(),
-        cartId: toCartId,
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
+    // For each item in source cart
+    for (const item of sourceItems) {
+      // Check if target cart already has this product/variant combination
+      const existingItem = await db.query.cartItems.findFirst({
+        where: and(
+          eq(cartItems.cartId, toCartId),
+          eq(cartItems.productId, item.productId),
+          item.variantId
+            ? eq(cartItems.variantId, item.variantId)
+            : sql`${cartItems.variantId} IS NULL`
+        ),
       });
+
+      if (existingItem) {
+        // Update quantity in target cart if item exists
+        await db
+          .update(cartItems)
+          .set({
+            quantity: existingItem.quantity + item.quantity,
+            updatedAt: new Date(),
+          })
+          .where(eq(cartItems.id, existingItem.id));
+      } else {
+        // Add new item to target cart
+        await db.insert(cartItems).values({
+          id: createId(),
+          cartId: toCartId,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: item.quantity,
+        });
+      }
     }
+
+    // Delete all items from source cart
+    await db.delete(cartItems).where(eq(cartItems.cartId, fromCartId));
+
+    // Note: Cookies would be handled by the client after successful transfer
+
+    revalidatePath("/cart");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error transferring cart:", error);
+    return { error: "Failed to transfer cart" };
   }
-
-  // Delete all items from source cart
-  await db.delete(cartItems).where(eq(cartItems.cartId, fromCartId));
-
-  revalidatePath("/cart");
 }
 
 // Function to fetch product details for local cart items

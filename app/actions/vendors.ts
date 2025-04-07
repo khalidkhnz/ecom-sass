@@ -8,6 +8,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { eq, sql, count, and, like } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { authorize } from "@/lib/authorize";
 
 // Get all vendors
 
@@ -142,6 +144,9 @@ export async function getVendorBySlug(slug: string) {
 // Create a new vendor
 export async function createVendor(data: VendorFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = vendorSchema.parse(data);
 
@@ -178,6 +183,10 @@ export async function createVendor(data: VendorFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error creating vendor:", error);
     return { error: "Failed to create vendor" };
   }
@@ -186,6 +195,9 @@ export async function createVendor(data: VendorFormValues) {
 // Update a vendor
 export async function updateVendor(id: string, data: VendorFormValues) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
     // Validate data
     const validatedData = vendorSchema.parse(data);
 
@@ -198,7 +210,7 @@ export async function updateVendor(id: string, data: VendorFormValues) {
       return { error: "Vendor not found" };
     }
 
-    // Check if slug exists (if changed)
+    // Check if slug exists for a different vendor
     if (validatedData.slug !== existingVendor.slug) {
       const slugExists = await db.query.vendors.findFirst({
         where: eq(vendors.slug, validatedData.slug),
@@ -234,6 +246,10 @@ export async function updateVendor(id: string, data: VendorFormValues) {
       return { error: error.errors[0].message };
     }
 
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating vendor:", error);
     return { error: "Failed to update vendor" };
   }
@@ -242,29 +258,42 @@ export async function updateVendor(id: string, data: VendorFormValues) {
 // Delete a vendor
 export async function deleteVendor(id: string) {
   try {
-    // Check if vendor exists and get associated products
-    const vendorProducts = await db
-      .select({ id: products.id })
-      .from(products)
-      .where(eq(products.vendorId, id));
+    // Authorize admin access
+    await authorize("admin");
 
-    const productCount = vendorProducts.length;
+    // Check if vendor exists
+    const existingVendor = await db.query.vendors.findFirst({
+      where: eq(vendors.id, id),
+    });
+
+    if (!existingVendor) {
+      return { error: "Vendor not found" };
+    }
+
+    // Check if any products are using this vendor
+    const vendorProducts = await db.query.products.findMany({
+      where: eq(products.vendorId, id),
+      limit: 1,
+    });
+
+    if (vendorProducts && vendorProducts.length > 0) {
+      return {
+        error:
+          "This vendor cannot be deleted because it is associated with one or more products",
+      };
+    }
 
     // Delete vendor
     await db.delete(vendors).where(eq(vendors.id, id));
 
-    // Update any associated products to remove the vendor
-    if (productCount > 0) {
-      await db
-        .update(products)
-        .set({ vendorId: null })
-        .where(eq(products.vendorId, id));
-    }
-
     revalidatePath("/admin/vendors");
 
-    return { success: true, productCount };
+    return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error deleting vendor:", error);
     return { error: "Failed to delete vendor" };
   }
@@ -276,6 +305,19 @@ export async function updateVendorStatus(
   status: "pending" | "active" | "suspended"
 ) {
   try {
+    // Authorize admin access
+    await authorize("admin");
+
+    // Check if vendor exists
+    const existingVendor = await db.query.vendors.findFirst({
+      where: eq(vendors.id, id),
+    });
+
+    if (!existingVendor) {
+      return { error: "Vendor not found" };
+    }
+
+    // Update vendor status
     await db
       .update(vendors)
       .set({
@@ -288,6 +330,10 @@ export async function updateVendorStatus(
 
     return { success: true };
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return { error: "You are not authorized to perform this action" };
+    }
+
     console.error("Error updating vendor status:", error);
     return { error: "Failed to update vendor status" };
   }
