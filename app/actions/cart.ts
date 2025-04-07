@@ -13,11 +13,21 @@ import {
   removeCartItemSchema,
 } from "@/zod/cart";
 import type { Cart } from "@/schema/cart";
+import { auth } from "@/lib/auth";
 
 // Helper to get or create cart ID
 async function getCartId(): Promise<string> {
+  // Check if user is authenticated
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (userId) {
+    // For authenticated users, use their user ID as the cart ID
+    return userId;
+  }
+
+  // For guest users, use cookie-based cart ID
   // Get the cart ID from the cookie if it exists
-  // Use type assertion to overcome TypeScript error
   const cookieStore = await cookies();
   const cartId = cookieStore.get("cartId")?.value;
 
@@ -71,61 +81,77 @@ type CartItemWithDetails = {
 
 // Get cart contents with product details
 export async function getCart(): Promise<Cart> {
-  const cartId = await getCartId();
+  try {
+    // Get cartId from session or cookie
+    const cartId = await getCartId();
+    console.log("Server: Getting cart for cartId:", cartId);
 
-  // Get cart items with joined product details
-  const cartItemsData = (await db.query.cartItems.findMany({
-    where: eq(cartItems.cartId, cartId),
-    with: {
-      product: {
-        columns: {
-          id: true,
-          name: true,
-          price: true,
-          discountPrice: true,
-          images: true,
-          slug: true,
+    // Get cart items with joined product details
+    const cartItemsData = (await db.query.cartItems.findMany({
+      where: eq(cartItems.cartId, cartId),
+      with: {
+        product: {
+          columns: {
+            id: true,
+            name: true,
+            price: true,
+            discountPrice: true,
+            images: true,
+            slug: true,
+          },
+        },
+        variant: {
+          columns: {
+            id: true,
+            name: true,
+            price: true,
+            options: true,
+          },
         },
       },
-      variant: {
-        columns: {
-          id: true,
-          name: true,
-          price: true,
-          options: true,
-        },
-      },
-    },
-    orderBy: desc(cartItems.createdAt),
-  })) as unknown as CartItemWithDetails[];
+      orderBy: desc(cartItems.createdAt),
+    })) as unknown as CartItemWithDetails[];
 
-  // Calculate cart totals
-  const totalItems = cartItemsData.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
+    console.log(`Server: Found ${cartItemsData.length} items in cart`);
 
-  const subtotal = cartItemsData.reduce((sum, item) => {
-    // Use variant price if available, otherwise product price
-    // Consider discount price if available
-    let price = 0;
+    // Calculate cart totals
+    const totalItems = cartItemsData.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
 
-    if (item.variant?.price) {
-      price = parseFloat(String(item.variant.price));
-    } else if (item.product.discountPrice) {
-      price = parseFloat(String(item.product.discountPrice));
-    } else {
-      price = parseFloat(String(item.product.price));
-    }
+    const subtotal = cartItemsData.reduce((sum, item) => {
+      // Use variant price if available, otherwise product price
+      // Consider discount price if available
+      let price = 0;
 
-    return sum + price * item.quantity;
-  }, 0);
+      if (item.variant?.price) {
+        price = parseFloat(String(item.variant.price));
+      } else if (item.product.discountPrice) {
+        price = parseFloat(String(item.product.discountPrice));
+      } else {
+        price = parseFloat(String(item.product.price));
+      }
 
-  return {
-    items: cartItemsData,
-    totalItems,
-    subtotal,
-  };
+      return sum + price * item.quantity;
+    }, 0);
+
+    const cart: Cart = {
+      items: cartItemsData,
+      totalItems,
+      subtotal,
+    };
+
+    console.log("Server: Returning cart with totals:", {
+      totalItems,
+      subtotal,
+    });
+    return cart;
+  } catch (error) {
+    console.error("Server: Error getting cart:", error);
+    // Return empty cart on error
+    return { items: [], totalItems: 0, subtotal: 0 };
+  }
 }
 
 // Add item to cart
@@ -286,4 +312,167 @@ export async function clearCart() {
   await db.delete(cartItems).where(eq(cartItems.cartId, cartId));
 
   revalidatePath("/cart");
+}
+
+// Transfer cart items from one ID to another (for merging guest cart to user cart)
+export async function transferCart(fromCartId: string, toCartId: string) {
+  // Get items from source cart
+  const sourceItems = await db.query.cartItems.findMany({
+    where: eq(cartItems.cartId, fromCartId),
+  });
+
+  // For each item in source cart
+  for (const item of sourceItems) {
+    // Check if target cart already has this product/variant combination
+    const existingItem = await db.query.cartItems.findFirst({
+      where: and(
+        eq(cartItems.cartId, toCartId),
+        eq(cartItems.productId, item.productId),
+        item.variantId
+          ? eq(cartItems.variantId, item.variantId)
+          : sql`${cartItems.variantId} IS NULL`
+      ),
+    });
+
+    if (existingItem) {
+      // Update quantity in target cart if item exists
+      await db
+        .update(cartItems)
+        .set({
+          quantity: existingItem.quantity + item.quantity,
+          updatedAt: new Date(),
+        })
+        .where(eq(cartItems.id, existingItem.id));
+    } else {
+      // Add new item to target cart
+      await db.insert(cartItems).values({
+        id: createId(),
+        cartId: toCartId,
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+      });
+    }
+  }
+
+  // Delete all items from source cart
+  await db.delete(cartItems).where(eq(cartItems.cartId, fromCartId));
+
+  revalidatePath("/cart");
+}
+
+// Function to fetch product details for local cart items
+export async function getLocalCartItemDetails(
+  items: { productId: string; variantId: string | null }[]
+) {
+  console.log("Server: getLocalCartItemDetails called with items:", items);
+
+  if (!items || !items.length) {
+    console.log("Server: No items provided to getLocalCartItemDetails");
+    return [];
+  }
+
+  const productIds = [...new Set(items.map((item) => item.productId))];
+  const variantIds = items
+    .filter((item) => item.variantId)
+    .map((item) => item.variantId as string);
+
+  console.log("Server: Fetching details for productIds:", productIds);
+
+  // Fetch product details
+  try {
+    // Safety check for empty arrays
+    if (productIds.length === 0) {
+      console.log("Server: No product IDs to fetch");
+      return [];
+    }
+
+    // Create parameterized SQL query
+    const productsData = await db.query.products.findMany({
+      where: sql`${products.id} IN (${sql.join(
+        productIds.map((id) => sql`${id}`),
+        sql`, `
+      )})`,
+      columns: {
+        id: true,
+        name: true,
+        price: true,
+        discountPrice: true,
+        images: true,
+        slug: true,
+        inventory: true,
+      },
+    });
+
+    console.log("Server: Found products:", productsData);
+
+    // Fetch variant details if needed
+    let variantsData: any[] = [];
+    if (variantIds && variantIds.length > 0) {
+      variantsData = await db.query.productVariants.findMany({
+        where: sql`${productVariants.id} IN (${sql.join(
+          variantIds.map((id) => sql`${id}`),
+          sql`, `
+        )})`,
+        columns: {
+          id: true,
+          name: true,
+          price: true,
+          options: true,
+          productId: true,
+          inventory: true,
+        },
+      });
+      console.log("Server: Found variants:", variantsData);
+    }
+
+    // Create a map for quick lookups
+    const productsMap = productsData.reduce((map, product) => {
+      map[product.id] = {
+        ...product,
+        // Ensure images is always an array
+        images: Array.isArray(product.images) ? product.images : [],
+      };
+      return map;
+    }, {} as Record<string, any>);
+
+    const variantsMap = variantsData.reduce((map, variant) => {
+      map[variant.id] = variant;
+      return map;
+    }, {} as Record<string, any>);
+
+    // Return the details for each item
+    const result = items.map((item) => {
+      const product = productsMap[item.productId];
+      const variant = item.variantId ? variantsMap[item.variantId] : null;
+
+      return {
+        product: product || {
+          id: item.productId,
+          name: "Product not found",
+          price: "0",
+          discountPrice: null,
+          images: [],
+          slug: "",
+        },
+        variant,
+      };
+    });
+
+    console.log("Server: Returning product details:", result);
+    return result;
+  } catch (error) {
+    console.error("Server: Error fetching product details:", error);
+    return items.map((item) => ({
+      product: {
+        id: item.productId,
+        name: "Error loading product",
+        price: "0",
+        discountPrice: null,
+        images: [],
+        slug: "",
+      },
+      variant: null,
+    }));
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Container } from "@/components/ui/container";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -102,16 +102,16 @@ export default function CartPage() {
                   {cart.items.map((item) => {
                     // Get product image or placeholder
                     const productImage =
-                      item.product.images && item.product.images.length > 0
+                      item.product?.images && item.product.images.length > 0
                         ? item.product.images[0]
                         : "https://placehold.co/600x600/f3f4f6/a1a1aa?text=No+Image";
 
                     // Determine price to display
                     const unitPrice = item.variant?.price
                       ? parseFloat(String(item.variant.price))
-                      : item.product.discountPrice
+                      : item.product?.discountPrice
                       ? parseFloat(String(item.product.discountPrice))
-                      : parseFloat(String(item.product.price));
+                      : parseFloat(String(item.product?.price || "0"));
 
                     const totalPrice = unitPrice * item.quantity;
 
@@ -121,19 +121,25 @@ export default function CartPage() {
                           <div className="relative h-20 w-20 rounded overflow-hidden">
                             <Image
                               src={productImage}
-                              alt={item.product.name}
+                              alt={item.product?.name || "Product"}
                               fill
                               className="object-cover"
                             />
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Link
-                            href={`/products/${item.product.slug}`}
-                            className="font-medium hover:underline"
-                          >
-                            {item.product.name}
-                          </Link>
+                          {item.product?.slug ? (
+                            <Link
+                              href={`/products/${item.product.slug}`}
+                              className="font-medium hover:underline"
+                            >
+                              {item.product.name}
+                            </Link>
+                          ) : (
+                            <span className="font-medium">
+                              {item.product?.name || "Loading product..."}
+                            </span>
+                          )}
                           {item.variant && (
                             <div className="text-sm text-muted-foreground mt-1">
                               Variant: {item.variant.name}

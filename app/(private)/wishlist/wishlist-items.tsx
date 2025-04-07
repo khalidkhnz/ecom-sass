@@ -350,9 +350,13 @@ function WishlistItemCard({
         <div className="pt-3 mt-auto">
           <AddToCartButton
             product={{
-              id: item.product.id,
-              name: item.product.name,
-              inventory: item.product.inventory,
+              id: item?.product?.id,
+              name: item?.product?.name,
+              inventory: item?.product?.inventory,
+              price: item?.product?.price,
+              discountPrice: item?.product?.discountPrice,
+              images: item?.product?.images,
+              slug: item?.product?.slug,
             }}
             variantId={item.variant?.id}
             inStock={inStock}
@@ -497,9 +501,13 @@ function WishlistItemList({
             <div className="w-full sm:w-48">
               <AddToCartButton
                 product={{
-                  id: item.product.id,
-                  name: item.product.name,
-                  inventory: item.product.inventory,
+                  id: item?.product?.id,
+                  name: item?.product?.name,
+                  inventory: item?.product?.inventory,
+                  price: item?.product?.price,
+                  discountPrice: item?.product?.discountPrice,
+                  images: item?.product?.images,
+                  slug: item?.product?.slug,
                 }}
                 variantId={item.variant?.id}
                 inStock={inStock}
