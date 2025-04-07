@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/app/context/cart-context";
+import { useCart } from "@/context/cart-context";
 import { cn } from "@/lib/utils";
 
 export function CartIcon() {

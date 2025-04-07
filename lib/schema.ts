@@ -40,6 +40,14 @@ export {
   type Cart,
 } from "@/schema/cart";
 
+// Export wishlist
+export {
+  wishlistItems,
+  type WishlistItem,
+  type NewWishlistItem,
+  type Wishlist,
+} from "@/schema/wishlist";
+
 // Export relations
 export {
   productsRelations,

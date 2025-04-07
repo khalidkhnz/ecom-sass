@@ -17,7 +17,7 @@ import {
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { useCart } from "@/app/context/cart-context";
+import { useCart } from "@/context/cart-context";
 import { formatPrice } from "@/lib/utils";
 import {
   Table,

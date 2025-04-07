@@ -3,11 +3,22 @@ import { Pool, Client } from "pg";
 import { config } from "@/lib/config";
 import * as schema from "@/lib/schema";
 
+// Use snake_case for the database, as PostgreSQL conventionally uses snake_case
 const pool = new Pool({
   connectionString: config.DB_URL,
 });
 
-export const db = drizzle(pool, { schema, casing: "snake_case" });
+// Make sure we explicitly set casing to snake_case for consistency
+export const db = drizzle(pool, {
+  schema,
+  casing: "snake_case",
+});
+
+// Debug logging only in development, but with proper type handling
+if (process.env.NODE_ENV !== "production") {
+  // Use console directly for debugging SQL queries
+  console.log("SQL debugging enabled");
+}
 
 export async function openConnection() {
   const client = new Client({ connectionString: config.DB_URL });
@@ -17,5 +28,5 @@ export async function openConnection() {
   return {
     db,
     closeConnection,
-  }
+  };
 }

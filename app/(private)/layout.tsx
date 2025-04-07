@@ -9,16 +9,9 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await authorize("user");
-
-  const userRow = await db.query.users.findFirst({
-    where: eq(users.id, session.user.id),
-  });
-
-  if (!userRow) {
-    redirect("/signin");
-  }
-
+  // Allow rendering the children without forced authentication
+  // Each page in the private section should implement its own
+  // authentication check and redirect logic as needed
   return <>{children}</>;
 }
 

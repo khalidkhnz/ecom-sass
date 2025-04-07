@@ -15,6 +15,20 @@
       "when": 1743997718469,
       "tag": "0001_silly_magma",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1744001087872,
+      "tag": "0002_modern_the_hand",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1744001571100,
+      "tag": "0003_lumpy_ken_ellis",
+      "breakpoints": true
     }
   ]
 }

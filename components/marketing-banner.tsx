@@ -11,7 +11,7 @@ interface MarketingBannerProps {
 
 export function MarketingBanner({
   text = "Free shipping on all orders over",
-  highlight = "$50",
+  highlight = "₹1100",
   link = "/shipping",
 }: MarketingBannerProps) {
   const [isVisible, setIsVisible] = useState(true);

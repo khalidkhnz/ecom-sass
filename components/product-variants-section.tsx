@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import VariantSelector from "./variant-selector";
 import QuantitySelector from "./quantity-selector";
 import AddToCartButton from "./add-to-cart-button";
+import WishlistButton from "./wishlist-button";
 
 interface Variant {
   id: string;
@@ -159,7 +160,7 @@ export default function ProductVariantsSection({
           />
         </div>
 
-        {/* Add to Cart Button */}
+        {/* Add to Cart Button and Wishlist Button */}
         <div className="flex space-x-4">
           <AddToCartButton
             product={product}
@@ -167,9 +168,10 @@ export default function ProductVariantsSection({
             variantId={selectedVariant?.id}
             quantity={quantity}
           />
-          <Button variant="outline" size="lg" className="flex-shrink-0">
-            <Heart className="h-5 w-5" />
-          </Button>
+          <WishlistButton
+            productId={product.id}
+            variantId={selectedVariant?.id}
+          />
         </div>
       </div>
     </div>

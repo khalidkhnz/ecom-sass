@@ -11,6 +11,8 @@ import {
 } from "./products";
 import { subcategories } from "./subcategories";
 import { cartItems } from "./cart";
+import { wishlistItems } from "./wishlist";
+import { users } from "./users";
 
 // Set up relations for products
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -33,13 +35,10 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   variants: many(productVariants),
   reviews: many(productReviews),
   inventoryTransactions: many(inventoryTransactions),
-  relatedToProducts: many(relatedProducts, {
-    relationName: "productRelations",
-  }),
-  relatedFromProducts: many(relatedProducts, {
-    relationName: "relatedProductRelations",
-  }),
+  relatedTo: many(relatedProducts, { relationName: "product_related_to" }),
+  relatedFrom: many(relatedProducts, { relationName: "product_related_from" }),
   cartItems: many(cartItems),
+  wishlistItems: many(wishlistItems),
 }));
 
 // Set up relations for categories
@@ -87,12 +86,12 @@ export const relatedProductsRelations = relations(
     product: one(products, {
       fields: [relatedProducts.productId],
       references: [products.id],
-      relationName: "productRelations",
+      relationName: "product_related_to",
     }),
     relatedProduct: one(products, {
       fields: [relatedProducts.relatedProductId],
       references: [products.id],
-      relationName: "relatedProductRelations",
+      relationName: "product_related_from",
     }),
   })
 );
@@ -106,5 +105,22 @@ export const cartItemsRelations = relations(cartItems, ({ one }) => ({
   variant: one(productVariants, {
     fields: [cartItems.variantId],
     references: [productVariants.id],
+  }),
+}));
+
+// Add wishlist relations
+export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
+  product: one(products, {
+    fields: [wishlistItems.product_id],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [wishlistItems.variant_id],
+    references: [productVariants.id],
+  }),
+  // Ensure user relation works correctly
+  user: one(users, {
+    fields: [wishlistItems.user_id],
+    references: [users.id],
   }),
 }));
