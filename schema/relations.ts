@@ -10,6 +10,7 @@ import {
   inventoryTransactions,
 } from "./products";
 import { subcategories } from "./subcategories";
+import { cartItems } from "./cart";
 
 // Set up relations for products
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -38,6 +39,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   relatedFromProducts: many(relatedProducts, {
     relationName: "relatedProductRelations",
   }),
+  cartItems: many(cartItems),
 }));
 
 // Set up relations for categories
@@ -61,11 +63,12 @@ export const subcategoriesRelations = relations(
 // Set up relations for product variants
 export const productVariantsRelations = relations(
   productVariants,
-  ({ one }) => ({
+  ({ one, many }) => ({
     product: one(products, {
       fields: [productVariants.productId],
       references: [products.id],
     }),
+    cartItems: many(cartItems),
   })
 );
 
@@ -93,3 +96,15 @@ export const relatedProductsRelations = relations(
     }),
   })
 );
+
+// Set up relations for cart items
+export const cartItemsRelations = relations(cartItems, ({ one }) => ({
+  product: one(products, {
+    fields: [cartItems.productId],
+    references: [products.id],
+  }),
+  variant: one(productVariants, {
+    fields: [cartItems.variantId],
+    references: [productVariants.id],
+  }),
+}));

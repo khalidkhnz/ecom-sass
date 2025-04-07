@@ -32,6 +32,14 @@ export {
   type NewVendor,
 } from "@/schema/products";
 
+// Export cart
+export {
+  cartItems,
+  type CartItem,
+  type NewCartItem,
+  type Cart,
+} from "@/schema/cart";
+
 // Export relations
 export {
   productsRelations,
@@ -40,6 +48,7 @@ export {
   productVariantsRelations,
   productReviewsRelations,
   relatedProductsRelations,
+  cartItemsRelations,
 } from "@/schema/relations";
 
 export * from "@/schema/settings";

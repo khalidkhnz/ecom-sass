@@ -1,30 +1,19 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import {
-  Minus,
-  Plus,
-  Heart,
-  Package,
-  RotateCcw,
-  Truck,
-  Info,
-  Tag,
-  Box,
-  Check,
-} from "lucide-react";
+import { Package, RotateCcw, Truck, Tag, Box } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getProductById } from "@/app/actions/products";
 import { getCategories } from "@/app/actions/categories";
 import { ProductShowcase } from "@/components/product-showcase";
-import { Product } from "@/hooks/useProducts";
 import ImageGallery from "./image-gallery";
 import ProductSkeleton from "./product-skeleton";
+import ProductVariantsSection from "@/components/product-variants-section";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { cn, formatPrice } from "@/lib/utils";
 
 async function getSimilarProducts(
   categoryId: string | null,
@@ -87,16 +76,10 @@ async function ProductDetails({ productId }: { productId: string }) {
     getSimilarProducts(product.categoryId, productId),
   ]);
 
-  const formattedPrice = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(parseFloat(product.price));
+  const formattedPrice = formatPrice(product.price);
 
   const formattedDiscountPrice = product.discountPrice
-    ? new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(parseFloat(product.discountPrice))
+    ? formatPrice(product.discountPrice)
     : null;
 
   const inStock = product.inventory > 0;
@@ -259,44 +242,17 @@ async function ProductDetails({ productId }: { productId: string }) {
               )}
             </div>
 
-            {/* Variants selection if available */}
-            {hasVariants && (
-              <div className="space-y-3">
-                <h3 className="font-medium">Options</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  {product.variants.map((variant: any) => (
-                    <div
-                      key={variant.id}
-                      className={cn(
-                        "border rounded-md p-3 cursor-pointer hover:border-primary transition-colors",
-                        variant.default
-                          ? "border-primary ring-1 ring-primary"
-                          : ""
-                      )}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{variant.name}</h4>
-                          {variant.price && (
-                            <p className="text-sm mt-1 font-medium">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: "USD",
-                              }).format(parseFloat(variant.price))}
-                            </p>
-                          )}
-                        </div>
-                        {variant.default && (
-                          <Badge variant="outline" className="ml-2">
-                            Default
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Product Variants Section (Client Component) */}
+            <ProductVariantsSection
+              product={product}
+              variants={product.variants || []}
+              inStock={inStock}
+              hasDiscount={hasDiscount}
+              discountActive={discountActive}
+              discountEnd={
+                product.discountEnd ? new Date(product.discountEnd) : null
+              }
+            />
 
             {/* Tags */}
             {product.tags && product.tags.length > 0 && (
@@ -319,46 +275,12 @@ async function ProductDetails({ productId }: { productId: string }) {
               </div>
             )}
 
-            {/* Quantity Selector */}
-            <div className="pt-4">
-              <div className="flex items-center mb-6">
-                <span className="text-sm font-medium mr-3">Quantity:</span>
-                <div className="flex items-center border rounded-md">
-                  <button
-                    className="px-3 py-2 hover:bg-accent transition-colors"
-                    disabled={!inStock}
-                    aria-label="Decrease quantity"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <span className="px-4 py-2 text-center w-12">1</span>
-                  <button
-                    className="px-3 py-2 hover:bg-accent transition-colors"
-                    disabled={!inStock}
-                    aria-label="Increase quantity"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Add to Cart Button */}
-              <div className="flex space-x-4">
-                <Button className="w-full" size="lg" disabled={!inStock}>
-                  {inStock ? "Add to Cart" : "Out of Stock"}
-                </Button>
-                <Button variant="outline" size="lg" className="flex-shrink-0">
-                  <Heart className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-
             {/* Product Benefits */}
             <div className="border rounded-lg p-4 space-y-3 mt-6 bg-muted/30">
               <div className="flex items-center gap-2">
                 <Truck className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm">
-                  Free shipping on orders over $50
+                  Free shipping on orders over ₹1100
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -532,15 +454,15 @@ async function ProductDetails({ productId }: { productId: string }) {
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex justify-between">
                         <span>Standard Shipping (3-5 business days)</span>
-                        <span className="font-medium">$4.99</span>
+                        <span className="font-medium">₹100</span>
                       </li>
                       <li className="flex justify-between">
                         <span>Express Shipping (1-2 business days)</span>
-                        <span className="font-medium">$9.99</span>
+                        <span className="font-medium">₹200</span>
                       </li>
                       <li className="flex justify-between">
-                        <span>Free Shipping on orders over $50</span>
-                        <span className="font-medium">$0.00</span>
+                        <span>Free Shipping on orders over ₹1100</span>
+                        <span className="font-medium">₹0.00</span>
                       </li>
                     </ul>
                   </div>

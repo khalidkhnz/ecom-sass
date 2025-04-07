@@ -16,6 +16,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { ThemeToggle } from "./theme-toggle";
+import { CartIcon } from "./cart-icon";
 
 const categories = [
   { name: "Clothing", slug: "clothing" },
@@ -124,12 +125,7 @@ export function Navbar() {
             <Button variant="ghost" size="icon">
               <User className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                0
-              </span>
-            </Button>
+            <CartIcon />
             <ThemeToggle />
           </div>
         </div>

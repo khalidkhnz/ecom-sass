@@ -40,10 +40,10 @@ const providers: Provider[] = [
   GitHub,
   Google,
   Postmark({ from: "noreply@example.com" }),
-  Nodemailer({
-    server: process.env.EMAIL_SERVER,
-    from: process.env.EMAIL_FROM,
-  }),
+  // Nodemailer({
+  //   server: process.env.EMAIL_SERVER_HOST,
+  //   from: process.env.EMAIL_FROM,
+  // }),
   Credentials({
     credentials: {
       email: {},

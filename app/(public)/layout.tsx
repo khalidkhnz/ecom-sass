@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MarketingBanner } from "@/components/marketing-banner";
+import { CartProvider } from "@/app/context/cart-context";
 
 export default function PublicLayout({
   children,
@@ -10,10 +11,12 @@ export default function PublicLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <Texture enabled={false} />
-      <MarketingBanner />
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
+      <CartProvider>
+        <MarketingBanner />
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </CartProvider>
     </div>
   );
 }
