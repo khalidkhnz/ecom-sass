@@ -68,12 +68,12 @@ export function useBrands(params?: {
   // Delete brand mutation
   const deleteBrandMutation = useMutation({
     mutationFn: (id: string) => deleteBrand(id),
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: brandKeys.lists() });
       toast.success(
         `Brand deleted successfully${
-          result.productCount
-            ? ` (${result.productCount} products updated)`
+          result?.productCount
+            ? ` (${result?.productCount} products updated)`
             : ""
         }`
       );

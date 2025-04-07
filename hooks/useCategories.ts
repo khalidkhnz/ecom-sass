@@ -65,12 +65,12 @@ export function useCategories(params?: {
 
   const deleteCategoryMutation = useMutation({
     mutationFn: (id: string) => deleteCategory(id),
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       if (result.success) {
         toast.success(
           `Category deleted successfully${
-            result.productCount
-              ? `. ${result.productCount} products updated.`
+            result?.productCount
+              ? `. ${result?.productCount} products updated.`
               : ""
           }`
         );

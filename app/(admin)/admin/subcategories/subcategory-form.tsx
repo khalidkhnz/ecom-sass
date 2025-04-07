@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { subcategorySchema, type SubcategoryFormData } from "@/zod/subcategory";
+import { subcategorySchema } from "@/zod/subcategory";
+import { type SubcategoryFormValues } from "@/zod/subcategory";
 import { Category } from "@/schema/categories";
 import { useRouter } from "next/navigation";
 import {
@@ -30,7 +31,7 @@ import {
 import { toast } from "sonner";
 
 interface SubcategoryFormProps {
-  initialData?: SubcategoryFormData & { id?: string };
+  initialData?: SubcategoryFormValues & { id?: string };
   categories: Category[];
 }
 
@@ -39,7 +40,7 @@ export function SubcategoryForm({
   categories,
 }: SubcategoryFormProps) {
   const router = useRouter();
-  const form = useForm<SubcategoryFormData>({
+  const form = useForm<SubcategoryFormValues>({
     resolver: zodResolver(subcategorySchema),
     defaultValues: initialData || {
       name: "",
@@ -61,7 +62,7 @@ export function SubcategoryForm({
     }
   };
 
-  const onSubmit = async (data: SubcategoryFormData) => {
+  const onSubmit = async (data: SubcategoryFormValues) => {
     try {
       if (initialData?.id) {
         const result = await updateSubcategory(initialData.id, data);

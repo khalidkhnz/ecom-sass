@@ -68,12 +68,12 @@ export function useVendors(params?: {
   // Delete vendor mutation
   const deleteVendorMutation = useMutation({
     mutationFn: (id: string) => deleteVendor(id),
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
       toast.success(
         `Vendor deleted successfully${
-          result.productCount
-            ? ` (${result.productCount} products updated)`
+          result?.productCount
+            ? ` (${result?.productCount} products updated)`
             : ""
         }`
       );

@@ -188,9 +188,9 @@ export const BrandsClient = ({ data }: BrandsClientProps) => {
         loading={loading}
       />
       <DataTable
-        columns={columns}
+        columns={columns as any}
         data={data}
-        searchKey="name"
+        isLoading={loading}
         searchPlaceholder="Search brands..."
       />
     </>
