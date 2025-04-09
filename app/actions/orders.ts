@@ -1,11 +1,11 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { orders, orderItems, payments, cartItems } from "@/lib/schema";
+import { orders, orderItems, payments, cartItems, users } from "@/lib/schema";
 import { createId } from "@paralleldrive/cuid2";
 import { auth } from "@/lib/auth";
 import { getCart, clearCart } from "./cart";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import crypto from "crypto";
@@ -378,6 +378,207 @@ export async function getUserOrders() {
     return {
       success: false,
       message: error.message || "Failed to get orders",
+      error,
+    };
+  }
+}
+
+// ADMIN ACTIONS
+
+// Helper to check if user is admin
+async function checkAdminAccess() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("You must be logged in to access this resource");
+  }
+
+  if (session.user.role !== "admin") {
+    throw new Error("You don't have permission to access this resource");
+  }
+
+  return session.user;
+}
+
+// Admin: Get all orders
+export async function getAllOrders(
+  page = 1,
+  limit = 10,
+  filters?: {
+    status?: string;
+    paymentStatus?: string;
+    search?: string;
+    fromDate?: string;
+    toDate?: string;
+  }
+) {
+  try {
+    // Check admin access
+    await checkAdminAccess();
+
+    const offset = (page - 1) * limit;
+
+    // Build the SQL query
+    let query: any = db.select().from(orders);
+
+    // Apply filters
+    if (filters) {
+      // Filter by status
+      if (filters.status && filters.status !== "all") {
+        query = query.where(eq(orders.status, filters.status));
+      }
+
+      // Filter by payment status
+      if (filters.paymentStatus && filters.paymentStatus !== "all") {
+        query = query.where(eq(orders.paymentStatus, filters.paymentStatus));
+      }
+
+      // Search by order number
+      if (filters.search) {
+        query = query.where(
+          sql`${orders.orderNumber} ILIKE ${"%" + filters.search + "%"} OR 
+              ${orders.userId} ILIKE ${"%" + filters.search + "%"}`
+        );
+      }
+
+      // Date range filter
+      if (filters.fromDate) {
+        query = query.where(
+          sql`${orders.createdAt} >= ${new Date(filters.fromDate)}`
+        );
+      }
+
+      if (filters.toDate) {
+        const toDate = new Date(filters.toDate);
+        toDate.setHours(23, 59, 59, 999); // Set to end of day
+        query = query.where(sql`${orders.createdAt} <= ${toDate}`);
+      }
+    }
+
+    // Count total matching orders
+    const countResult = await db.select({ count: sql`count(*)` }).from(orders);
+    const totalOrders = Number(countResult[0].count);
+
+    // Get paginated results
+    const allOrders = await query
+      .orderBy(desc(orders.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      success: true,
+      orders: allOrders,
+      pagination: {
+        total: totalOrders,
+        page,
+        limit,
+        totalPages: Math.ceil(totalOrders / limit),
+      },
+    };
+  } catch (error: any) {
+    console.error("Error getting all orders:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to get orders",
+      error,
+    };
+  }
+}
+
+// Admin: Get order details with items
+export async function getOrderDetails(orderId: string) {
+  try {
+    // Check admin access
+    await checkAdminAccess();
+
+    // Get order with items
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return {
+        success: false,
+        message: "Order not found",
+      };
+    }
+
+    // Get user details for the order
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, order.userId),
+      columns: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    return {
+      success: true,
+      order: {
+        ...order,
+        user,
+      },
+    };
+  } catch (error: any) {
+    console.error("Error getting order details:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to get order details",
+      error,
+    };
+  }
+}
+
+// Admin: Update order status
+export async function updateOrderStatus(orderId: string, status: string) {
+  try {
+    // Check admin access
+    await checkAdminAccess();
+
+    // Find the order
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+    });
+
+    if (!order) {
+      return {
+        success: false,
+        message: "Order not found",
+      };
+    }
+
+    // Update the order status
+    await db
+      .update(orders)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    // If the status is "delivered" or "completed", update the payment status to completed
+    if (status === "delivered" || status === "completed") {
+      await db
+        .update(orders)
+        .set({
+          paymentStatus: "completed",
+        })
+        .where(eq(orders.id, orderId));
+    }
+
+    return {
+      success: true,
+      message: "Order status updated successfully",
+    };
+  } catch (error: any) {
+    console.error("Error updating order status:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to update order status",
       error,
     };
   }

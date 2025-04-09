@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,9 +17,11 @@ import {
   CheckCircle2,
   ShoppingBag,
   XCircle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import {
   Table,
@@ -29,79 +33,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-
-// This would be replaced with a real API call
-async function getOrders() {
-  // Demo data - in a real app this would come from your database
-  return {
-    orders: [
-      {
-        id: "ORD-2024-001",
-        date: new Date("2024-03-22"),
-        status: "Processing",
-        total: 129.99,
-        items: [
-          {
-            id: "item-1",
-            name: "Wireless Headphones",
-            price: 79.99,
-            quantity: 1,
-            image: "/images/headphones.jpg",
-          },
-          {
-            id: "item-2",
-            name: "Smart Watch",
-            price: 49.99,
-            quantity: 1,
-            image: "/images/watch.jpg",
-          },
-        ],
-      },
-      {
-        id: "ORD-2023-002",
-        date: new Date("2023-12-15"),
-        status: "Delivered",
-        total: 89.5,
-        items: [
-          {
-            id: "item-3",
-            name: "Bluetooth Speaker",
-            price: 89.5,
-            quantity: 1,
-            image: "/images/speaker.jpg",
-          },
-        ],
-      },
-      {
-        id: "ORD-2023-001",
-        date: new Date("2023-10-03"),
-        status: "Cancelled",
-        total: 215.75,
-        items: [
-          {
-            id: "item-4",
-            name: "Gaming Mouse",
-            price: 45.99,
-            quantity: 1,
-            image: null,
-          },
-          {
-            id: "item-5",
-            name: "Mechanical Keyboard",
-            price: 169.76,
-            quantity: 1,
-            image: null,
-          },
-        ],
-      },
-    ],
-  };
-}
+import { formatPrice } from "@/lib/utils";
+import { getUserOrders } from "@/app/actions/orders";
+import { formatDistanceToNow, format } from "date-fns";
 
 function getStatusBadge(status: string) {
-  switch (status) {
-    case "Processing":
+  switch (status.toLowerCase()) {
+    case "pending":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-yellow-50 text-yellow-700 hover:bg-yellow-50"
+        >
+          <Clock className="h-3 w-3 mr-1" />
+          Pending
+        </Badge>
+      );
+    case "processing":
       return (
         <Badge
           variant="outline"
@@ -111,7 +59,7 @@ function getStatusBadge(status: string) {
           Processing
         </Badge>
       );
-    case "Shipped":
+    case "shipped":
       return (
         <Badge
           variant="outline"
@@ -121,7 +69,7 @@ function getStatusBadge(status: string) {
           Shipped
         </Badge>
       );
-    case "Delivered":
+    case "delivered":
       return (
         <Badge
           variant="outline"
@@ -131,14 +79,64 @@ function getStatusBadge(status: string) {
           Delivered
         </Badge>
       );
-    case "Cancelled":
+    case "cancelled":
+    case "failed":
+    case "payment_failed":
       return (
         <Badge
           variant="outline"
           className="bg-red-50 text-red-700 hover:bg-red-50"
         >
           <XCircle className="h-3 w-3 mr-1" />
-          Cancelled
+          {status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+        </Badge>
+      );
+    case "completed":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 hover:bg-green-50"
+        >
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Completed
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline">
+          {status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+        </Badge>
+      );
+  }
+}
+
+function getPaymentStatusBadge(status: string) {
+  switch (status.toLowerCase()) {
+    case "pending":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-yellow-50 text-yellow-700 hover:bg-yellow-50"
+        >
+          Pending
+        </Badge>
+      );
+    case "completed":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 hover:bg-green-50"
+        >
+          Completed
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge
+          variant="outline"
+          className="bg-red-50 text-red-700 hover:bg-red-50"
+        >
+          Failed
         </Badge>
       );
     default:
@@ -146,14 +144,67 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default async function OrdersPage() {
-  const session = await auth();
+export default function OrdersPage() {
+  const { data: session, status } = useSession();
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!session || !session.user) {
-    redirect("/login");
+  // If not authenticated, redirect to login
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      redirect("/auth/signin?callbackUrl=/user/orders");
+    }
+  }, [status]);
+
+  // Fetch orders when authenticated
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (status === "authenticated") {
+        try {
+          setLoading(true);
+          const result = await getUserOrders();
+
+          if (result.success && result.orders) {
+            setOrders(result.orders);
+          } else {
+            setError(result.message || "Failed to fetch orders");
+          }
+        } catch (err: any) {
+          console.error("Error fetching orders:", err);
+          setError(err.message || "An unexpected error occurred");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchOrders();
+  }, [status]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+        <h3 className="text-lg font-medium">Loading your orders...</h3>
+      </div>
+    );
   }
 
-  const { orders } = await getOrders();
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h3 className="text-lg font-medium mb-2">Error loading orders</h3>
+        <p className="text-muted-foreground text-center max-w-md">{error}</p>
+        <Button className="mt-4" onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -174,9 +225,10 @@ export default async function OrdersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order ID</TableHead>
+                  <TableHead>Order #</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
                   <TableHead className="text-right">Total</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -184,15 +236,27 @@ export default async function OrdersPage() {
               <TableBody>
                 {orders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
-                    <TableCell>{format(order.date, "PPP")}</TableCell>
+                    <TableCell className="font-medium">
+                      {order.orderNumber}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(order.createdAt).toLocaleDateString()}
+                      <div className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(order.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </div>
+                    </TableCell>
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>
+                      {getPaymentStatusBadge(order.paymentStatus)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      ${order.total.toFixed(2)}
+                      {formatPrice(parseFloat(order.grandTotal))}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" asChild>
-                        <Link href={`/user/orders/${order.id}`}>
+                        <Link href={`/checkout/success?orderId=${order.id}`}>
                           <span className="flex items-center gap-1">
                             Details <ExternalLink className="h-3 w-3 ml-1" />
                           </span>
@@ -208,10 +272,10 @@ export default async function OrdersPage() {
               <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No orders found</h3>
               <p className="text-muted-foreground mb-6">
-                You haven't placed any orders yet.
+                {`You haven't placed any orders yet.`}
               </p>
               <Button asChild>
-                <Link href="/shop">Start Shopping</Link>
+                <Link href="/products">Start Shopping</Link>
               </Button>
             </div>
           )}
@@ -223,62 +287,40 @@ export default async function OrdersPage() {
           <h2 className="text-xl font-semibold mt-8">Recent Orders</h2>
           <div className="grid gap-6 md:grid-cols-2">
             {orders.slice(0, 2).map((order) => (
-              <Card key={order.id}>
+              <Card key={order.id} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-base">{order.id}</CardTitle>
+                      <CardTitle className="text-base">
+                        {order.orderNumber}
+                      </CardTitle>
                       <CardDescription>
-                        {format(order.date, "PPP")}
+                        {format(new Date(order.createdAt), "PPP")}
                       </CardDescription>
                     </div>
                     {getStatusBadge(order.status)}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {order.items.map((item) => (
-                      <div key={item.id} className="flex items-center gap-4">
-                        <div className="h-16 w-16 bg-gray-100 rounded-md flex items-center justify-center">
-                          {item.image ? (
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="h-14 w-14 object-contain"
-                            />
-                          ) : (
-                            <Package className="h-6 w-6 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <div className="flex justify-between mt-1">
-                            <p className="text-sm text-muted-foreground">
-                              Qty: {item.quantity}
-                            </p>
-                            <p className="text-sm font-medium">
-                              ${item.price.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="pt-4 border-t">
-                      <div className="flex justify-between">
-                        <span className="font-medium">Total</span>
-                        <span className="font-medium">
-                          ${order.total.toFixed(2)}
-                        </span>
-                      </div>
+                <CardContent className="pb-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      {`Payment: ${order.paymentMethod}`}
+                    </div>
+                    <div className="font-medium">
+                      {formatPrice(parseFloat(order.grandTotal))}
                     </div>
                   </div>
-                  <div className="mt-6">
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/user/orders/${order.id}`}>
-                        View Order Details
-                      </Link>
-                    </Button>
-                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    asChild
+                  >
+                    <Link href={`/checkout/success?orderId=${order.id}`}>
+                      View Order Details
+                    </Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}
