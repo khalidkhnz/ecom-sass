@@ -65,7 +65,7 @@ export default function CheckoutPage() {
   // If user is not logged in, redirect to login
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/login?callbackUrl=/checkout");
+      router.push("/login?callbackUrl=/checkout");
     }
   }, [status, router]);
 
