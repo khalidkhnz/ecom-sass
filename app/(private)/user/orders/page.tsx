@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { getUserOrders } from "@/app/actions/orders";
 import { formatDistanceToNow, format } from "date-fns";
+import CompletePaymentButton from "@/app/components/user/CompletePaymentButton";
 
 function getStatusBadge(status: string) {
   switch (status.toLowerCase()) {
@@ -255,13 +256,18 @@ export default function OrdersPage() {
                       {formatPrice(parseFloat(order.grandTotal))}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="outline" asChild>
-                        <Link href={`/checkout/success?orderId=${order.id}`}>
-                          <span className="flex items-center gap-1">
-                            Details <ExternalLink className="h-3 w-3 ml-1" />
-                          </span>
-                        </Link>
-                      </Button>
+                      <div className="flex gap-2 justify-end">
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/checkout/success?orderId=${order.id}`}>
+                            <span className="flex items-center gap-1">
+                              Details <ExternalLink className="h-3 w-3 ml-1" />
+                            </span>
+                          </Link>
+                        </Button>
+                        {order.paymentStatus === "pending" && (
+                          <CompletePaymentButton orderId={order.id} />
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -311,16 +317,22 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mt-2"
-                    asChild
-                  >
-                    <Link href={`/checkout/success?orderId=${order.id}`}>
-                      View Order Details
-                    </Link>
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      asChild
+                    >
+                      <Link href={`/checkout/success?orderId=${order.id}`}>
+                        View Order Details
+                      </Link>
+                    </Button>
+
+                    {order.paymentStatus === "pending" && (
+                      <CompletePaymentButton orderId={order.id} />
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

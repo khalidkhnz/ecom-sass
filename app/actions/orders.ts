@@ -383,6 +383,76 @@ export async function getUserOrders() {
   }
 }
 
+// Get payment data for a pending order to allow users to complete payment
+export async function getPendingPaymentData(orderId: string) {
+  try {
+    const user = await getCurrentUser();
+
+    // Get the order
+    const order: any = await db.query.orders.findFirst({
+      where: and(
+        eq(orders.id, orderId),
+        eq(orders.userId, user.id),
+        eq(orders.paymentStatus, "pending")
+      ),
+    });
+
+    if (!order) {
+      return {
+        success: false,
+        message: "Order not found or payment is not pending",
+      };
+    }
+
+    // Check if payment details exist with razorpayOrderId
+    if (!order.paymentDetails?.razorpayOrderId) {
+      return {
+        success: false,
+        message: "Payment information not found for this order",
+      };
+    }
+
+    // Get user information for prefill
+    const userInfo = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: {
+        name: true,
+        email: true,
+      },
+    });
+
+    // Return the payment data
+    return {
+      success: true,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      paymentData: {
+        orderId: order.paymentDetails.razorpayOrderId,
+        amount: parseFloat(order.grandTotal) * 100, // Convert to paise
+        currency: "INR",
+        key: process.env.RAZORPAY_KEY_ID,
+        name: process.env.NEXT_PUBLIC_SITE_NAME || "E-Commerce Store",
+        description: `Payment for order ${order.orderNumber}`,
+        prefill: {
+          name: userInfo?.name || "",
+          email: userInfo?.email || "",
+          contact: order.billingAddress?.phone || "",
+        },
+        notes: {
+          address: `${order.billingAddress?.addressLine1}, ${order.billingAddress?.city}, ${order.billingAddress?.state}, ${order.billingAddress?.country}`,
+        },
+      },
+    };
+  } catch (error: any) {
+    console.error("Error getting pending payment data:", error);
+    return {
+      success: false,
+      message: error.message || "Failed to get payment information",
+      error,
+    };
+  }
+}
+
 // ADMIN ACTIONS
 
 // Helper to check if user is admin
