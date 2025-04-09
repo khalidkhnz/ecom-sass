@@ -1,6 +1,6 @@
-"use server";
+"use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -17,13 +17,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, Users, ShoppingCart, Package } from "lucide-react";
-import { db } from "@/lib/db";
-import { orders, users, products } from "@/lib/schema";
-import { formatPrice } from "@/lib/utils";
-import { sql, desc, eq } from "drizzle-orm";
-import { format } from "date-fns";
+import {
+  DollarSign,
+  Users,
+  ShoppingCart,
+  Package,
+  Loader2,
+} from "lucide-react";
 import Link from "next/link";
+import { formatPrice } from "@/lib/utils";
+import RevenueChart from "@/components/RevenueChart";
+import {
+  getDashboardSummary,
+  getRecentOrders,
+  getMonthlyRevenue,
+} from "@/app/actions/dashboard";
+
+// Define types
+interface RecentOrder {
+  id: string;
+  orderId: string;
+  customer: string;
+  date: string;
+  amount: number;
+  status: string;
+}
+
+interface RevenueData {
+  month: string;
+  revenue: number;
+}
 
 // Function to get status badge
 function getStatusBadge(status: string) {
@@ -39,178 +62,93 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default async function DashboardPage() {
-  // Get total revenue
-  const revenueResult = await db
-    .select({
-      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
-    })
-    .from(orders)
-    .where(eq(orders.paymentStatus, "completed"));
+export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [summaryData, setSummaryData] = useState({
+    revenue: { total: 0, change: 0 },
+    customers: { total: 0, change: 0 },
+    orders: { total: 0, completed: 0, change: 0 },
+    products: { total: 0, change: 0 },
+  });
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
 
-  const totalRevenue = parseFloat(revenueResult[0]?.total || "0");
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        setLoading(true);
 
-  // Get monthly revenue for comparison
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-  const currentYear = now.getFullYear();
-  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        // Fetch all dashboard data in parallel
+        const [summaryResult, ordersResult, revenueResult] = await Promise.all([
+          getDashboardSummary(),
+          getRecentOrders(),
+          getMonthlyRevenue(),
+        ]);
 
-  const currentMonthStart = new Date(currentYear, currentMonth, 1);
-  const lastMonthStart = new Date(lastMonthYear, lastMonth, 1);
-  const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+        setSummaryData(summaryResult);
+        setRecentOrders(ordersResult as RecentOrder[]);
+        setRevenueData(revenueResult);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const currentMonthRevenue = await db
-    .select({
-      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
-    })
-    .from(orders)
-    .where(
-      sql`payment_status = 'completed' AND 
-        created_at >= ${currentMonthStart} AND 
-        created_at < ${now}`
-    );
+    fetchDashboardData();
+  }, []);
 
-  const lastMonthRevenue = await db
-    .select({
-      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
-    })
-    .from(orders)
-    .where(
-      sql`payment_status = 'completed' AND 
-        created_at >= ${lastMonthStart} AND 
-        created_at < ${lastMonthEnd}`
-    );
-
-  const currentMonthTotal = parseFloat(currentMonthRevenue[0]?.total || "0");
-  const lastMonthTotal = parseFloat(lastMonthRevenue[0]?.total || "0");
-
-  const revenueChange =
-    lastMonthTotal === 0
-      ? 100
-      : Math.round(
-          ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
-        );
-
-  // Get total customers
-  const customerCount = await db
-    .select({
-      count: sql<number>`count(*)`,
-    })
-    .from(users);
-
-  // Get total orders
-  const orderCount = await db
-    .select({
-      count: sql<number>`count(*)`,
-      completed: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
-    })
-    .from(orders);
-
-  // Get order count for comparison
-  const currentMonthOrders = await db
-    .select({
-      count: sql<number>`count(*)`,
-    })
-    .from(orders)
-    .where(sql`created_at >= ${currentMonthStart} AND created_at < ${now}`);
-
-  const lastMonthOrders = await db
-    .select({
-      count: sql<number>`count(*)`,
-    })
-    .from(orders)
-    .where(
-      sql`created_at >= ${lastMonthStart} AND created_at < ${lastMonthEnd}`
-    );
-
-  const orderChange =
-    lastMonthOrders[0].count === 0
-      ? 100
-      : Math.round(
-          ((currentMonthOrders[0].count - lastMonthOrders[0].count) /
-            lastMonthOrders[0].count) *
-            100
-        );
-
-  // Get total products
-  const productCount = await db
-    .select({
-      count: sql<number>`count(*)`,
-    })
-    .from(products);
-
-  // Get recent orders
-  const recentOrders = await db
-    .select({
-      id: orders.id,
-      orderNumber: orders.orderNumber,
-      createdAt: orders.createdAt,
-      status: orders.status,
-      grandTotal: orders.grandTotal,
-      userId: orders.userId,
-    })
-    .from(orders)
-    .orderBy(desc(orders.createdAt))
-    .limit(5);
-
-  // Get user names for recent orders
-  const userIds = recentOrders.map((order) => order.userId);
-  const userResults = await db
-    .select({
-      id: users.id,
-      name: users.name,
-    })
-    .from(users)
-    .where(sql`id IN (${userIds.join(",")})`);
-
-  // Create a map of user IDs to names
-  const userMap = userResults.reduce((map, user) => {
-    map[user.id] = user.name || "";
-    return map;
-  }, {} as Record<string, string>);
-
-  // Transform recent orders with user names
-  const recentOrdersWithCustomers = recentOrders.map((order) => ({
-    id: order.orderNumber,
-    orderId: order.id,
-    customer: userMap[order.userId] || "Unknown",
-    date: format(new Date(order.createdAt), "yyyy-MM-dd"),
-    amount: formatPrice(parseFloat(order.grandTotal)),
-    status: order.status,
-  }));
-
-  const summaryData = [
+  // Prepare data for cards
+  const cards = [
     {
       title: "Total Revenue",
-      value: formatPrice(totalRevenue),
-      change: `${revenueChange >= 0 ? "+" : ""}${revenueChange}%`,
+      value: formatPrice(summaryData.revenue.total),
+      change: `${summaryData.revenue.change >= 0 ? "+" : ""}${
+        summaryData.revenue.change
+      }%`,
       icon: <DollarSign className="h-5 w-5 text-green-600" />,
       description: "Compared to last month",
     },
     {
       title: "Total Customers",
-      value: customerCount[0].count.toString(),
-      change: "+5.2%", // You can calculate this from historical data
+      value: summaryData.customers.total.toString(),
+      change: `${summaryData.customers.change >= 0 ? "+" : ""}${
+        summaryData.customers.change
+      }%`,
       icon: <Users className="h-5 w-5 text-blue-600" />,
       description: "Active accounts",
     },
     {
       title: "Total Orders",
-      value: orderCount[0].count.toString(),
-      change: `${orderChange >= 0 ? "+" : ""}${orderChange}%`,
+      value: summaryData.orders.total.toString(),
+      change: `${summaryData.orders.change >= 0 ? "+" : ""}${
+        summaryData.orders.change
+      }%`,
       icon: <ShoppingCart className="h-5 w-5 text-purple-600" />,
-      description: `${orderCount[0].completed} completed`,
+      description: `${summaryData.orders.completed} completed`,
     },
     {
       title: "Total Products",
-      value: productCount[0].count.toString(),
-      change: "+3.8%", // You can calculate this from historical data
+      value: summaryData.products.total.toString(),
+      change: `${summaryData.products.change >= 0 ? "+" : ""}${
+        summaryData.products.change
+      }%`,
       icon: <Package className="h-5 w-5 text-orange-600" />,
       description: "Active products",
     },
   ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
+          <h3 className="text-lg font-medium">Loading dashboard data...</h3>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -220,7 +158,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {summaryData.map((item, index) => (
+        {cards.map((item, index) => (
           <Card key={index}>
             <CardHeader className="pb-2">
               <div className="flex justify-between items-center">
@@ -258,10 +196,7 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[240px] flex items-center justify-center bg-gray-50 rounded-md">
-              <p className="text-gray-500">Revenue Chart Placeholder</p>
-              {/* In a real app, you would use a chart library here like Chart.js or Recharts */}
-            </div>
+            <RevenueChart data={revenueData} />
           </CardContent>
         </Card>
 
@@ -271,43 +206,51 @@ export default async function DashboardPage() {
             <CardDescription>Latest customer orders</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrdersWithCustomers.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        href={`/admin/orders/${order.orderId}`}
-                        className="hover:underline text-blue-600"
-                      >
-                        {order.id}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{order.customer}</TableCell>
-                    <TableCell>{order.date}</TableCell>
-                    <TableCell>{order.amount}</TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4 text-right">
-              <Link
-                href="/admin/orders"
-                className="text-sm text-blue-600 hover:underline"
-              >
-                View all orders →
-              </Link>
-            </div>
+            {recentOrders.length > 0 ? (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">
+                          <Link
+                            href={`/admin/orders/${order.orderId}`}
+                            className="hover:underline text-blue-600"
+                          >
+                            {order.id}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{order.customer}</TableCell>
+                        <TableCell>{order.date}</TableCell>
+                        <TableCell>{formatPrice(order.amount)}</TableCell>
+                        <TableCell>{getStatusBadge(order.status)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 text-right">
+                  <Link
+                    href="/admin/orders"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    View all orders →
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No orders found.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

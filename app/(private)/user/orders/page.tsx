@@ -36,7 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { getUserOrders } from "@/app/actions/orders";
 import { formatDistanceToNow, format } from "date-fns";
-import CompletePaymentButton from "@/app/components/user/CompletePaymentButton";
+import CompletePaymentButton from "@/components/CompletePaymentButton";
 
 function getStatusBadge(status: string) {
   switch (status.toLowerCase()) {

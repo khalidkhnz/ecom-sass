@@ -24,7 +24,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import CompletePaymentButton from "@/app/components/user/CompletePaymentButton";
+import CompletePaymentButton from "@/components/CompletePaymentButton";
 import { format } from "date-fns";
 
 // Helper function to get status badge class
