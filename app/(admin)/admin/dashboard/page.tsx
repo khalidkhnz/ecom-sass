@@ -1,3 +1,5 @@
+"use server";
+
 import React from "react";
 import {
   Card,
@@ -16,78 +18,200 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, ShoppingCart, Package } from "lucide-react";
+import { db } from "@/lib/db";
+import { orders, users, products } from "@/lib/schema";
+import { formatPrice } from "@/lib/utils";
+import { sql, desc, eq } from "drizzle-orm";
+import { format } from "date-fns";
+import Link from "next/link";
 
-// Mock data for the dashboard
-const summaryData = [
-  {
-    title: "Total Revenue",
-    value: "₹12,456.78",
-    change: "+14.5%",
-    icon: <DollarSign className="h-5 w-5 text-green-600" />,
-    description: "Compared to last month",
-  },
-  {
-    title: "Total Customers",
-    value: "1,245",
-    change: "+5.2%",
-    icon: <Users className="h-5 w-5 text-blue-600" />,
-    description: "Active accounts",
-  },
-  {
-    title: "Total Orders",
-    value: "856",
-    change: "+10.3%",
-    icon: <ShoppingCart className="h-5 w-5 text-purple-600" />,
-    description: "Completed orders",
-  },
-  {
-    title: "Total Products",
-    value: "126",
-    change: "+3.8%",
-    icon: <Package className="h-5 w-5 text-orange-600" />,
-    description: "Active products",
-  },
-];
+// Function to get status badge
+function getStatusBadge(status: string) {
+  switch (status.toLowerCase()) {
+    case "completed":
+      return <Badge className="bg-green-100 text-green-800">{status}</Badge>;
+    case "processing":
+      return <Badge className="bg-blue-100 text-blue-800">{status}</Badge>;
+    case "pending":
+      return <Badge className="bg-yellow-100 text-yellow-800">{status}</Badge>;
+    default:
+      return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
+  }
+}
 
-const recentOrders = [
-  {
-    id: "#ORD-001",
-    customer: "John Doe",
-    date: "2023-04-01",
-    amount: "₹123.45",
-    status: "completed",
-  },
-  {
-    id: "#ORD-002",
-    customer: "Jane Smith",
-    date: "2023-04-01",
-    amount: "₹67.89",
-    status: "processing",
-  },
-  {
-    id: "#ORD-003",
-    customer: "Bob Johnson",
-    date: "2023-04-01",
-    amount: "₹210.99",
-    status: "completed",
-  },
-  {
-    id: "#ORD-004",
-    customer: "Alice Brown",
-    date: "2023-03-31",
-    amount: "₹45.50",
-    status: "pending",
-  },
-  {
-    id: "#ORD-005",
-    customer: "Charlie Wilson",
-    date: "2023-03-31",
-    amount: "₹175.25",
-    status: "completed",
-  },
-];
+export default async function DashboardPage() {
+  // Get total revenue
+  const revenueResult = await db
+    .select({
+      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
+    })
+    .from(orders)
+    .where(eq(orders.paymentStatus, "completed"));
 
-export default function DashboardPage() {
+  const totalRevenue = parseFloat(revenueResult[0]?.total || "0");
+
+  // Get monthly revenue for comparison
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const currentYear = now.getFullYear();
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const currentMonthStart = new Date(currentYear, currentMonth, 1);
+  const lastMonthStart = new Date(lastMonthYear, lastMonth, 1);
+  const lastMonthEnd = new Date(currentYear, currentMonth, 0);
+
+  const currentMonthRevenue = await db
+    .select({
+      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
+    })
+    .from(orders)
+    .where(
+      sql`payment_status = 'completed' AND 
+        created_at >= ${currentMonthStart} AND 
+        created_at < ${now}`
+    );
+
+  const lastMonthRevenue = await db
+    .select({
+      total: sql<string>`SUM(CAST(grand_total AS decimal))`,
+    })
+    .from(orders)
+    .where(
+      sql`payment_status = 'completed' AND 
+        created_at >= ${lastMonthStart} AND 
+        created_at < ${lastMonthEnd}`
+    );
+
+  const currentMonthTotal = parseFloat(currentMonthRevenue[0]?.total || "0");
+  const lastMonthTotal = parseFloat(lastMonthRevenue[0]?.total || "0");
+
+  const revenueChange =
+    lastMonthTotal === 0
+      ? 100
+      : Math.round(
+          ((currentMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
+        );
+
+  // Get total customers
+  const customerCount = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(users);
+
+  // Get total orders
+  const orderCount = await db
+    .select({
+      count: sql<number>`count(*)`,
+      completed: sql<number>`SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END)`,
+    })
+    .from(orders);
+
+  // Get order count for comparison
+  const currentMonthOrders = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(orders)
+    .where(sql`created_at >= ${currentMonthStart} AND created_at < ${now}`);
+
+  const lastMonthOrders = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(orders)
+    .where(
+      sql`created_at >= ${lastMonthStart} AND created_at < ${lastMonthEnd}`
+    );
+
+  const orderChange =
+    lastMonthOrders[0].count === 0
+      ? 100
+      : Math.round(
+          ((currentMonthOrders[0].count - lastMonthOrders[0].count) /
+            lastMonthOrders[0].count) *
+            100
+        );
+
+  // Get total products
+  const productCount = await db
+    .select({
+      count: sql<number>`count(*)`,
+    })
+    .from(products);
+
+  // Get recent orders
+  const recentOrders = await db
+    .select({
+      id: orders.id,
+      orderNumber: orders.orderNumber,
+      createdAt: orders.createdAt,
+      status: orders.status,
+      grandTotal: orders.grandTotal,
+      userId: orders.userId,
+    })
+    .from(orders)
+    .orderBy(desc(orders.createdAt))
+    .limit(5);
+
+  // Get user names for recent orders
+  const userIds = recentOrders.map((order) => order.userId);
+  const userResults = await db
+    .select({
+      id: users.id,
+      name: users.name,
+    })
+    .from(users)
+    .where(sql`id IN (${userIds.join(",")})`);
+
+  // Create a map of user IDs to names
+  const userMap = userResults.reduce((map, user) => {
+    map[user.id] = user.name || "";
+    return map;
+  }, {} as Record<string, string>);
+
+  // Transform recent orders with user names
+  const recentOrdersWithCustomers = recentOrders.map((order) => ({
+    id: order.orderNumber,
+    orderId: order.id,
+    customer: userMap[order.userId] || "Unknown",
+    date: format(new Date(order.createdAt), "yyyy-MM-dd"),
+    amount: formatPrice(parseFloat(order.grandTotal)),
+    status: order.status,
+  }));
+
+  const summaryData = [
+    {
+      title: "Total Revenue",
+      value: formatPrice(totalRevenue),
+      change: `${revenueChange >= 0 ? "+" : ""}${revenueChange}%`,
+      icon: <DollarSign className="h-5 w-5 text-green-600" />,
+      description: "Compared to last month",
+    },
+    {
+      title: "Total Customers",
+      value: customerCount[0].count.toString(),
+      change: "+5.2%", // You can calculate this from historical data
+      icon: <Users className="h-5 w-5 text-blue-600" />,
+      description: "Active accounts",
+    },
+    {
+      title: "Total Orders",
+      value: orderCount[0].count.toString(),
+      change: `${orderChange >= 0 ? "+" : ""}${orderChange}%`,
+      icon: <ShoppingCart className="h-5 w-5 text-purple-600" />,
+      description: `${orderCount[0].completed} completed`,
+    },
+    {
+      title: "Total Products",
+      value: productCount[0].count.toString(),
+      change: "+3.8%", // You can calculate this from historical data
+      icon: <Package className="h-5 w-5 text-orange-600" />,
+      description: "Active products",
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -158,36 +282,32 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentOrders.map((order) => (
+                {recentOrdersWithCustomers.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/admin/orders/${order.orderId}`}
+                        className="hover:underline text-blue-600"
+                      >
+                        {order.id}
+                      </Link>
+                    </TableCell>
                     <TableCell>{order.customer}</TableCell>
                     <TableCell>{order.date}</TableCell>
                     <TableCell>{order.amount}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          order.status === "completed"
-                            ? "default"
-                            : order.status === "processing"
-                            ? "secondary"
-                            : "outline"
-                        }
-                        className={
-                          order.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : order.status === "processing"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
-                        }
-                      >
-                        {order.status}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{getStatusBadge(order.status)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            <div className="mt-4 text-right">
+              <Link
+                href="/admin/orders"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View all orders →
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

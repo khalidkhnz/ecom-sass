@@ -9,12 +9,42 @@ import {
 } from "@/components/ui/card";
 import { getWishlist } from "@/app/actions/wishlist";
 import { getCart } from "@/app/actions/cart";
+import { getUserOrders } from "@/app/actions/orders";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Heart, User, Clock, Package } from "lucide-react";
-import type { Wishlist } from "@/schema/wishlist";
+import {
+  ShoppingBag,
+  Heart,
+  User,
+  Clock,
+  Package,
+  CreditCard,
+  AlertCircle,
+} from "lucide-react";
+import { formatPrice } from "@/lib/utils";
+import CompletePaymentButton from "@/app/components/user/CompletePaymentButton";
+import { format } from "date-fns";
+
+// Helper function to get status badge class
+function getStatusBadgeClass(status: string) {
+  switch (status.toLowerCase()) {
+    case "delivered":
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "processing":
+      return "bg-blue-100 text-blue-800";
+    case "shipped":
+      return "bg-orange-100 text-orange-800";
+    case "cancelled":
+    case "failed":
+    case "payment_failed":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-yellow-100 text-yellow-800";
+  }
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -23,25 +53,26 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch user's wishlist and cart data
-  const wishlist = await getWishlist();
-  const cart = await getCart();
+  // Fetch user's wishlist, cart and order data
+  const wishlistResult = await getWishlist();
+  const cartResult = await getCart();
+  const ordersResult = await getUserOrders();
 
-  // For demo purposes - would be replaced with actual order data
-  const recentOrders = [
-    {
-      id: "ORD-2023-001",
-      date: "2023-12-15",
-      status: "Delivered",
-      total: "$129.99",
-    },
-    {
-      id: "ORD-2023-002",
-      date: "2024-03-22",
-      status: "Processing",
-      total: "$89.50",
-    },
-  ];
+  const wishlist = wishlistResult.items ? wishlistResult : { items: [] };
+  const cart = cartResult.items ? cartResult : { items: [] };
+  const orders = ordersResult.success ? ordersResult.orders : [];
+
+  // Get recent orders
+  const recentOrders = orders?.slice(0, 3) || [];
+
+  // Get pending payment orders
+  const pendingPaymentOrders = (orders || [])
+    .filter(
+      (order) =>
+        order.paymentStatus === "pending" &&
+        !["cancelled", "failed", "payment_failed"].includes(order.status)
+    )
+    .slice(0, 3);
 
   return (
     <div className="space-y-8">
@@ -62,7 +93,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {wishlist?.items.length || 0}
+              {wishlist?.items?.length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Items saved for later
@@ -84,7 +115,7 @@ export default async function DashboardPage() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{cart?.items.length || 0}</div>
+            <div className="text-2xl font-bold">{cart?.items?.length || 0}</div>
             <p className="text-xs text-muted-foreground">
               Items ready for checkout
             </p>
@@ -101,14 +132,12 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">Orders</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{recentOrders.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Orders placed recently
-            </p>
+            <div className="text-2xl font-bold">{orders?.length || 0}</div>
+            <p className="text-xs text-muted-foreground">Total orders placed</p>
             <Button
               variant="link"
               size="sm"
@@ -120,6 +149,50 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Payments Section */}
+      {pendingPaymentOrders.length > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              Pending Payments
+            </CardTitle>
+            <CardDescription>
+              Complete these payments to process your orders
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {pendingPaymentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 border border-yellow-200 rounded-lg bg-white"
+                >
+                  <div>
+                    <p className="font-medium">{order.orderNumber}</p>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Clock className="mr-1 h-3 w-3" />
+                      {format(new Date(order.createdAt), "PPP")}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">
+                      {formatPrice(parseFloat(order.grandTotal))}
+                    </p>
+                    <CompletePaymentButton orderId={order.id} />
+                  </div>
+                </div>
+              ))}
+              {pendingPaymentOrders.length > 3 && (
+                <Button asChild variant="outline" className="w-full mt-2">
+                  <Link href="/user/orders">View all pending orders</Link>
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -135,25 +208,30 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between p-4 border rounded-lg"
                 >
                   <div>
-                    <p className="font-medium">{order.id}</p>
+                    <p className="font-medium">{order.orderNumber}</p>
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Clock className="mr-1 h-3 w-3" />
-                      {order.date}
+                      {format(new Date(order.createdAt), "PPP")}
                     </div>
                   </div>
                   <div>
                     <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        order.status === "Delivered"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
+                      className={`px-2 py-1 rounded text-xs ${getStatusBadgeClass(
+                        order.status
+                      )}`}
                     >
-                      {order.status}
+                      {order.status
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
                     </span>
                     <p className="text-sm font-medium text-right mt-1">
-                      {order.total}
+                      {formatPrice(parseFloat(order.grandTotal))}
                     </p>
+                    {order.paymentStatus === "pending" && (
+                      <div className="mt-2">
+                        <CompletePaymentButton orderId={order.id} />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -166,10 +244,10 @@ export default async function DashboardPage() {
           ) : (
             <div className="text-center py-10">
               <p className="text-muted-foreground">
-                You haven't placed any orders yet.
+                You haven&apos;t placed any orders yet.
               </p>
               <Button asChild className="mt-4">
-                <Link href="/shop">Start Shopping</Link>
+                <Link href="/products">Start Shopping</Link>
               </Button>
             </div>
           )}
@@ -178,11 +256,13 @@ export default async function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Wishlist Items</CardTitle>
-          <CardDescription>Products you've saved for later</CardDescription>
+          <CardTitle>Wishlist Items</CardTitle>
+          <CardDescription>
+            Products you&apos;ve saved for later
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {wishlist.items && wishlist.items.length > 0 ? (
+          {wishlist?.items && wishlist.items.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {wishlist.items.slice(0, 4).map((item) => (
                 <div key={item.id} className="flex gap-4 p-4 border rounded-lg">
@@ -201,7 +281,7 @@ export default async function DashboardPage() {
                     <div>
                       <h3 className="font-medium">{item.product.name}</h3>
                       <p className="text-sm text-muted-foreground">
-                        ${item.product.price}
+                        {formatPrice(parseFloat(item.product.price))}
                       </p>
                     </div>
                     <div className="flex space-x-2">
@@ -224,7 +304,7 @@ export default async function DashboardPage() {
             <div className="text-center py-10">
               <p className="text-muted-foreground">Your wishlist is empty.</p>
               <Button asChild className="mt-4">
-                <Link href="/shop">Discover Products</Link>
+                <Link href="/products">Discover Products</Link>
               </Button>
             </div>
           )}
