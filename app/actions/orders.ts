@@ -507,7 +507,33 @@ export async function getAllOrders(
       if (filters.search) {
         query = query.where(
           sql`${orders.orderNumber} ILIKE ${"%" + filters.search + "%"} OR 
-              ${orders.userId} ILIKE ${"%" + filters.search + "%"}`
+              ${orders.userId} ILIKE ${"%" + filters.search + "%"} OR
+              EXISTS (
+                SELECT 1 FROM ${users}
+                WHERE ${users.id} = ${orders.userId}
+                AND (
+                  ${users.name} ILIKE ${"%" + filters.search + "%"} OR
+                  ${users.email} ILIKE ${"%" + filters.search + "%"}
+                )
+              ) OR
+              ${orders.billingAddress}->>'name' ILIKE ${
+            "%" + filters.search + "%"
+          } OR
+              ${orders.billingAddress}->>'addressLine1' ILIKE ${
+            "%" + filters.search + "%"
+          } OR
+              ${orders.billingAddress}->>'city' ILIKE ${
+            "%" + filters.search + "%"
+          } OR
+              ${orders.billingAddress}->>'postalCode' ILIKE ${
+            "%" + filters.search + "%"
+          } OR
+              ${orders.billingAddress}->>'phone' ILIKE ${
+            "%" + filters.search + "%"
+          } OR
+              ${orders.shippingAddress}->>'phone' ILIKE ${
+            "%" + filters.search + "%"
+          }`
         );
       }
 

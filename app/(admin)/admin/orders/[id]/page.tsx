@@ -276,7 +276,9 @@ export default function OrderDetailsPage() {
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Customer:</span>
                       <span className="text-muted-foreground">
-                        {order.user?.name || "Unknown"}
+                        {order.user?.name ||
+                          order.billingAddress?.name ||
+                          "Unknown"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -292,6 +294,18 @@ export default function OrderDetailsPage() {
                       <span className="text-muted-foreground">
                         {order.userId}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <Button
+                        variant="link"
+                        className="h-auto p-0 text-primary"
+                        asChild
+                      >
+                        <Link href={`/admin/orders?search=${order.userId}`}>
+                          View Customer&apos;s Other Orders
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </div>

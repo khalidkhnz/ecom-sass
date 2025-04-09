@@ -68,6 +68,12 @@ import {
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function getStatusBadge(status: string) {
   switch (status?.toLowerCase()) {
@@ -385,12 +391,33 @@ export default function AdminOrdersPage() {
               {/* Search */}
               <div>
                 <form onSubmit={handleSearchSubmit} className="flex gap-2">
-                  <div className="flex-1">
+                  <div className="flex-1 relative">
                     <Input
-                      placeholder="Search by order #"
+                      placeholder="Search by order #, customer name, email or address"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-help">
+                            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-80">
+                          <p>Search orders by:</p>
+                          <ul className="list-disc pl-4 mt-1 text-xs">
+                            <li>Order number</li>
+                            <li>Customer name</li>
+                            <li>Customer email</li>
+                            <li>
+                              Billing address (name, address, city, postal code)
+                            </li>
+                            <li>Phone number</li>
+                          </ul>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <Button type="submit" variant="secondary" size="icon">
                     <Search className="h-4 w-4" />

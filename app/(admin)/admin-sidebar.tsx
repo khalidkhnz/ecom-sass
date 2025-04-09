@@ -69,6 +69,11 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       icon: <ShoppingCart className="h-5 w-5" />,
     },
     {
+      label: "Users",
+      href: "/admin/users",
+      icon: <UserIcon className="h-5 w-5" />,
+    },
+    {
       label: "Settings",
       href: "/admin/settings",
       icon: <Settings className="h-5 w-5" />,

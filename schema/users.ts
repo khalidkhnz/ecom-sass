@@ -25,6 +25,7 @@ export const users = pgTable("users", {
   role: text().notNull(),
   password: text(),
   addresses: jsonb("addresses").$type<Address[]>().default([]),
+  adminNotes: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp()
     .notNull()
