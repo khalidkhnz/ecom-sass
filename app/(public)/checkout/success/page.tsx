@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -20,6 +20,14 @@ import { formatPrice } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 export default function SuccessPage() {
+  return (
+    <Suspense>
+      <SuspensedSuccessPage />
+    </Suspense>
+  );
+}
+
+function SuspensedSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
   const [loading, setLoading] = useState(true);

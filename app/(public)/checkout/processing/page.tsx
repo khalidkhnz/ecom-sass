@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Container } from "@/components/ui/container";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,14 @@ import { verifyPayment } from "@/app/actions/orders";
 import { toast } from "sonner";
 
 export default function ProcessingPage() {
+  return (
+    <Suspense>
+      <SuspensedProcessingPage />
+    </Suspense>
+  );
+}
+
+function SuspensedProcessingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [verifying, setVerifying] = useState(true);
