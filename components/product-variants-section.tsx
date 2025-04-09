@@ -9,6 +9,7 @@ import VariantSelector from "./variant-selector";
 import QuantitySelector from "./quantity-selector";
 import AddToCartButton from "./add-to-cart-button";
 import WishlistButton from "./wishlist-button";
+import { useQueryState } from "nuqs";
 
 interface Variant {
   id: string;
@@ -45,8 +46,17 @@ export default function ProductVariantsSection({
   discountActive,
   discountEnd,
 }: ProductVariantsSectionProps) {
+  const [variantInParams, setVariantInParams] = useQueryState("variant");
+
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
-    variants.find((v) => v.default) || variants[0] || null
+    variants.find((v) => {
+      if (variantInParams) {
+        return v.id == variantInParams;
+      }
+      return v.default;
+    }) ||
+      variants[0] ||
+      null
   );
   const [quantity, setQuantity] = useState(1);
 
@@ -54,6 +64,7 @@ export default function ProductVariantsSection({
   const handleVariantChange = (variantId: string) => {
     const variant = variants.find((v) => v.id === variantId) || null;
     setSelectedVariant(variant);
+    setVariantInParams(variant?.id || "");
   };
 
   // Handle quantity change

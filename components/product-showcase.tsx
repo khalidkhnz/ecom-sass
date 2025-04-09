@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowRight, ShoppingCart, Heart } from "lucide-react";
 import { getProducts } from "@/app/actions/products";
+import { formatPrice } from "@/lib/utils";
 
 interface ProductShowcaseProps {
   title: string;
@@ -56,10 +57,7 @@ function ProductCard({
       ? product.images[0]
       : "https://placehold.co/300x300/f3f4f6/a1a1aa?text=No+Image";
 
-  const formattedPrice = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD", // You can change this based on your store settings
-  }).format(parseFloat(product.price));
+  const formattedPrice = formatPrice(product.price);
 
   return (
     <Card className="h-full overflow-hidden border border-border rounded-lg transition-all hover:shadow-md">

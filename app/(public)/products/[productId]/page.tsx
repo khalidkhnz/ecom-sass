@@ -43,17 +43,32 @@ interface ProductPageProps {
   params: Promise<{
     productId: string;
   }>;
+  searchParams: Promise<{
+    variant?: string;
+  }>;
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({
+  params,
+  searchParams,
+}: ProductPageProps) {
   return (
     <Suspense fallback={<ProductSkeleton />}>
-      <ProductDetails productId={(await params).productId} />
+      <ProductDetails
+        productId={(await params).productId}
+        selectedVariant={(await searchParams).variant}
+      />
     </Suspense>
   );
 }
 
-async function ProductDetails({ productId }: { productId: string }) {
+async function ProductDetails({
+  productId,
+  selectedVariant,
+}: {
+  productId: string;
+  selectedVariant?: string;
+}) {
   const productData = await getProductById(productId);
 
   if (!productData) {
@@ -118,6 +133,11 @@ async function ProductDetails({ productId }: { productId: string }) {
 
   // Check if product has variants
   const hasVariants = product.variants && product.variants.length > 0;
+
+  // Get Current Selected Variant Info
+  const currentVariant: Variant = product?.variants?.find(
+    (v: any) => v?.id == selectedVariant
+  );
 
   return (
     <div className="py-10">
@@ -195,7 +215,9 @@ async function ProductDetails({ productId }: { productId: string }) {
 
                 {hasDiscount && discountActive && (
                   <p className="text-2xl font-bold text-red-600">
-                    {formattedDiscountPrice}
+                    {currentVariant?.price
+                      ? formatPrice(currentVariant?.price)
+                      : formattedDiscountPrice}
                   </p>
                 )}
 
@@ -204,7 +226,9 @@ async function ProductDetails({ productId }: { productId: string }) {
                     Save{" "}
                     {Math.round(
                       (1 -
-                        parseFloat(product.discountPrice || "0") /
+                        parseFloat(
+                          currentVariant?.price || product.discountPrice || "0"
+                        ) /
                           parseFloat(product.price)) *
                         100
                     )}
@@ -515,4 +539,13 @@ async function ProductDetails({ productId }: { productId: string }) {
       </Container>
     </div>
   );
+}
+
+interface Variant {
+  id: string;
+  name: string;
+  price: string | null;
+  sku: string;
+  default: boolean;
+  options?: Record<string, string>;
 }

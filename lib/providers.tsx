@@ -6,6 +6,7 @@ import { useState, ReactNode } from "react";
 import { ThemeProvider } from "./theme-provider";
 import { SessionProvider } from "next-auth/react";
 import { CartProvider } from "@/context/cart-context";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -21,22 +22,24 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <SessionProvider>
-      <CartProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <QueryClientProvider client={queryClient}>
-            {children}
-            {process.env.NODE_ENV === "development" && (
-              <ReactQueryDevtools initialIsOpen={false} />
-            )}
-          </QueryClientProvider>
-        </ThemeProvider>
-      </CartProvider>
-    </SessionProvider>
+    <NuqsAdapter>
+      <SessionProvider>
+        <CartProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryClientProvider client={queryClient}>
+              {children}
+              {process.env.NODE_ENV === "development" && (
+                <ReactQueryDevtools initialIsOpen={false} />
+              )}
+            </QueryClientProvider>
+          </ThemeProvider>
+        </CartProvider>
+      </SessionProvider>
+    </NuqsAdapter>
   );
 }

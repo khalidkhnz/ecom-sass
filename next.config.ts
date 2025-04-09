@@ -21,7 +21,12 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ["*", "www.thevaluestore.in", "placehold.co"],
+    domains: [
+      "*",
+      "www.thevaluestore.in",
+      "placehold.co",
+      "rukminim2.flixcart.com",
+    ],
   },
 };
 
