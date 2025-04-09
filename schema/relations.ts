@@ -13,6 +13,7 @@ import { subcategories } from "./subcategories";
 import { cartItems } from "./cart";
 import { wishlistItems } from "./wishlist";
 import { users } from "./users";
+import { orders, orderItems, payments } from "./orders";
 
 // Set up relations for products
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -122,5 +123,29 @@ export const wishlistItemsRelations = relations(wishlistItems, ({ one }) => ({
   user: one(users, {
     fields: [wishlistItems.user_id],
     references: [users.id],
+  }),
+}));
+
+// Add order relations
+export const ordersRelations = relations(orders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [orders.userId],
+    references: [users.id],
+  }),
+  items: many(orderItems),
+  payments: many(payments),
+}));
+
+export const orderItemsRelations = relations(orderItems, ({ one }) => ({
+  order: one(orders, {
+    fields: [orderItems.orderId],
+    references: [orders.id],
+  }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  order: one(orders, {
+    fields: [payments.orderId],
+    references: [orders.id],
   }),
 }));

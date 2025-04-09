@@ -153,7 +153,7 @@ export function Navbar() {
             {/* User menu - show login button or user dropdown */}
             {!session ? (
               <Button variant="ghost" size="icon" asChild>
-                <Link href="/signin">
+                <Link href="/login">
                   <User className="h-5 w-5" />
                 </Link>
               </Button>
@@ -298,7 +298,7 @@ export function Navbar() {
               </div>
               <div className="py-6">
                 <Link
-                  href="/signin"
+                  href="/login"
                   className="block px-3 py-2 text-base font-medium rounded-md hover:bg-accent"
                   onClick={() => setIsMenuOpen(false)}
                 >

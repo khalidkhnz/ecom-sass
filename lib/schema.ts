@@ -57,6 +57,25 @@ export {
   productReviewsRelations,
   relatedProductsRelations,
   cartItemsRelations,
+  ordersRelations,
+  orderItemsRelations,
+  paymentsRelations,
 } from "@/schema/relations";
 
 export * from "@/schema/settings";
+
+// Export orders and payments
+export {
+  orders,
+  orderItems,
+  payments,
+  orderStatusEnum,
+  paymentStatusEnum,
+  paymentMethodEnum,
+  type Order,
+  type NewOrder,
+  type OrderItem,
+  type NewOrderItem,
+  type Payment,
+  type NewPayment,
+} from "@/schema/orders";

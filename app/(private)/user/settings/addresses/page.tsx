@@ -59,7 +59,7 @@ export default function AddressesPage() {
       if (status === "loading") return;
 
       if (status === "unauthenticated") {
-        router.push("/signin");
+        router.push("/login");
         return;
       }
 

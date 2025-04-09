@@ -134,7 +134,7 @@ export default function WishlistItems() {
           You need to be signed in to save and view your favorite items.
         </p>
         <Button asChild className="mt-6 px-8">
-          <Link href="/signin">
+          <Link href="/login">
             <LogIn className="mr-2 h-4 w-4" />
             Sign In
           </Link>

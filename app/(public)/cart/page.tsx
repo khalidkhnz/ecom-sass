@@ -360,9 +360,11 @@ export default function CartPage() {
                   <span>{formatPrice(cart.subtotal)}</span>
                 </div>
 
-                <Button className="w-full mt-4" size="lg">
-                  Checkout
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                <Button className="w-full mt-4" size="lg" asChild>
+                  <Link href="/checkout">
+                    Checkout
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
 
                 <div className="text-xs text-center text-muted-foreground mt-4">

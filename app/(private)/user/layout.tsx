@@ -67,7 +67,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
   }
 
   if (!session || !session.user) {
-    redirect("/signin");
+    redirect("/login");
   }
 
   const mainNavItems = [

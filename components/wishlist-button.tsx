@@ -58,7 +58,7 @@ export default function WishlistButton({
       toast.error("Please sign in to add to wishlist", {
         action: {
           label: "Sign In",
-          onClick: () => router.push("/signin"),
+          onClick: () => router.push("/login"),
         },
       });
       setLoading(false);
@@ -87,7 +87,7 @@ export default function WishlistButton({
             toast.error(result.message, {
               action: {
                 label: "Sign In",
-                onClick: () => router.push("/signin"),
+                onClick: () => router.push("/login"),
               },
             });
             return;

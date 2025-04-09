@@ -150,7 +150,7 @@ export default async function OrdersPage() {
   const session = await auth();
 
   if (!session || !session.user) {
-    redirect("/signin");
+    redirect("/login");
   }
 
   const { orders } = await getOrders();

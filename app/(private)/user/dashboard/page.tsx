@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const session = await auth();
 
   if (!session || !session.user) {
-    redirect("/signin");
+    redirect("/login");
   }
 
   // Fetch user's wishlist and cart data
