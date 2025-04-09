@@ -20,3 +20,11 @@ export function formatPrice(price: number | string, currency = "INR") {
     maximumFractionDigits: 2,
   }).format(numericPrice);
 }
+
+export function getMinimumNumber(arr: string[] | number[]) {
+  return arr.reduce((prev, current, idx) => {
+    current = typeof current === "string" ? parseFloat(current) : current;
+    prev = typeof prev === "string" ? parseFloat(prev) : prev;
+    return prev > current ? current : prev;
+  });
+}

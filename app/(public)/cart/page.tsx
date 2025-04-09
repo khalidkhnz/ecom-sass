@@ -52,7 +52,7 @@ export default function CartPage() {
           <ShoppingBag className="h-16 w-16 text-muted-foreground" />
           <h1 className="mt-4 text-2xl font-bold">Your cart is empty</h1>
           <p className="mt-2 text-muted-foreground">
-            Looks like you haven't added anything to your cart yet.
+            {`Looks like you haven't added anything to your cart yet.`}
           </p>
           <Button asChild className="mt-6">
             <Link href="/products">
@@ -222,7 +222,11 @@ export default function CartPage() {
                         <TableCell>
                           {item.product?.slug ? (
                             <Link
-                              href={`/products/${item.product.slug}`}
+                              href={`/products/${item.product.slug}${
+                                item?.variant?.id
+                                  ? `?variant=${item?.variant?.id}`
+                                  : ""
+                              }`}
                               className="font-medium hover:underline"
                             >
                               {item.product.name}

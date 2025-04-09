@@ -172,7 +172,7 @@ export default function ProductVariantsSection({
         </div>
 
         {/* Add to Cart Button and Wishlist Button */}
-        <div className="flex space-x-4">
+        <div className="flex relative items-center justify-between w-full">
           <AddToCartButton
             product={product}
             inStock={inStock}

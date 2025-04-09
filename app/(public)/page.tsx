@@ -76,8 +76,8 @@ export default async function HomePage() {
               What Our Customers Say
             </h2>
             <p className="text-muted-foreground">
-              Don't just take our word for it. Here's what our customers have to
-              say about their shopping experience.
+              {`Don't just take our word for it. Here's what our customers have to
+              say about their shopping experience.`}
             </p>
           </div>
 
@@ -96,9 +96,9 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="text-sm mb-4">
-                "The quality of the products exceeded my expectations. Fast
+                {`"The quality of the products exceeded my expectations. Fast
                 shipping and excellent customer service. Will definitely be a
-                returning customer!"
+                returning customer!"`}
               </p>
               <div className="font-medium">Sarah T.</div>
             </div>
@@ -117,9 +117,9 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="text-sm mb-4">
-                "I've been shopping here for years and have never been
+                {` "I've been shopping here for years and have never been
                 disappointed. Their customer service is top-notch and the
-                products are always as described."
+                products are always as described."`}
               </p>
               <div className="font-medium">Michael R.</div>
             </div>
@@ -138,9 +138,9 @@ export default async function HomePage() {
                 ))}
               </div>
               <p className="text-sm mb-4">
-                "The website is easy to navigate, checkout process is smooth,
+                {` "The website is easy to navigate, checkout process is smooth,
                 and the delivery was faster than expected. Truly a 5-star
-                experience!"
+                experience!"`}
               </p>
               <div className="font-medium">Jessica L.</div>
             </div>

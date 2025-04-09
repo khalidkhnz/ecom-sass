@@ -130,7 +130,7 @@ export default function WishlistButton({
       variant={variant}
       size={size}
       className={cn(
-        "flex-shrink-0",
+        "w-[45px] h-[45px]",
         inWishlist && "text-red-500 hover:text-red-600",
         loading && "opacity-50 cursor-not-allowed",
         className

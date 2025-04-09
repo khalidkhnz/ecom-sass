@@ -62,7 +62,7 @@ function ProductCard({
   return (
     <Card className="h-full overflow-hidden border border-border rounded-lg transition-all hover:shadow-md">
       <Link
-        href={`/products/${product.id}`}
+        href={`/products/${product.slug}`}
         className="block relative h-48 overflow-hidden"
       >
         <img
@@ -85,7 +85,7 @@ function ProductCard({
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
           <div>
-            <Link href={`/products/${product.id}`}>
+            <Link href={`/products/${product.slug}`}>
               <h3 className="font-medium text-lg leading-tight line-clamp-1 hover:underline">
                 {product.name}
               </h3>

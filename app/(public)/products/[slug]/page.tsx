@@ -5,7 +5,7 @@ import { Container } from "@/components/ui/container";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getProductById } from "@/app/actions/products";
+import { getProductById, getProductBySlug } from "@/app/actions/products";
 import { getCategories } from "@/app/actions/categories";
 import { ProductShowcase } from "@/components/product-showcase";
 import ImageGallery from "./image-gallery";
@@ -41,7 +41,7 @@ async function getSimilarProducts(
 
 interface ProductPageProps {
   params: Promise<{
-    productId: string;
+    slug: string;
   }>;
   searchParams: Promise<{
     variant?: string;
@@ -55,21 +55,21 @@ export default async function ProductPage({
   return (
     <Suspense fallback={<ProductSkeleton />}>
       <ProductDetails
-        productId={(await params).productId}
-        selectedVariant={(await searchParams).variant}
+        slug={(await params).slug}
+        selectedVariantId={(await searchParams).variant}
       />
     </Suspense>
   );
 }
 
 async function ProductDetails({
-  productId,
-  selectedVariant,
+  slug,
+  selectedVariantId,
 }: {
-  productId: string;
-  selectedVariant?: string;
+  slug: string;
+  selectedVariantId?: string;
 }) {
-  const productData = await getProductById(productId);
+  const productData = await getProductBySlug(slug);
 
   if (!productData) {
     notFound();
@@ -88,7 +88,7 @@ async function ProductDetails({
 
   const [categories, similarProducts] = await Promise.all([
     getCategories(),
-    getSimilarProducts(product.categoryId, productId),
+    getSimilarProducts(product.categoryId, product.id),
   ]);
 
   const formattedPrice = formatPrice(product.price);
@@ -136,7 +136,7 @@ async function ProductDetails({
 
   // Get Current Selected Variant Info
   const currentVariant: Variant = product?.variants?.find(
-    (v: any) => v?.id == selectedVariant
+    (v: any) => v?.id == selectedVariantId
   );
 
   return (
@@ -144,7 +144,7 @@ async function ProductDetails({
       <Container>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
           {/* Product Images */}
-          <div className="sticky top-20">
+          <div className="">
             <ImageGallery images={formattedImages} />
           </div>
 
@@ -201,17 +201,23 @@ async function ProductDetails({
               )}
 
               {/* Price section */}
-              <div className="flex items-baseline mt-4">
-                <p
-                  className={cn(
-                    "text-2xl font-semibold",
-                    hasDiscount && discountActive
-                      ? "text-muted-foreground line-through mr-2"
-                      : ""
-                  )}
-                >
-                  {formattedPrice}
-                </p>
+              <div
+                className={cn("flex items-baseline", {
+                  "mt-4": hasDiscount && discountActive,
+                })}
+              >
+                {hasDiscount && discountActive && (
+                  <p
+                    className={cn(
+                      "text-2xl font-semibold",
+                      hasDiscount && discountActive
+                        ? "text-muted-foreground line-through mr-2"
+                        : ""
+                    )}
+                  >
+                    {formattedPrice}
+                  </p>
+                )}
 
                 {hasDiscount && discountActive && (
                   <p className="text-2xl font-bold text-red-600">
@@ -261,7 +267,7 @@ async function ProductDetails({
 
               {lowStock && (
                 <span className="ml-2 text-sm text-red-600">
-                  Only {product.inventory} left!
+                  Only {currentVariant?.inventory || product.inventory} left!
                 </span>
               )}
             </div>
@@ -417,9 +423,14 @@ async function ProductDetails({
                             Dimensions
                           </span>
                           <span className="font-medium">
-                            {product.dimensions.length}" ×{" "}
-                            {product.dimensions.width}" ×{" "}
-                            {product.dimensions.height}"
+                            {[
+                              product.dimensions.length,
+                              product.dimensions.width,
+                              product.dimensions.height,
+                            ].map(
+                              (dimension, idx) =>
+                                `${idx !== 0 ? " ×" : ""} ${dimension}"`
+                            )}
                           </span>
                         </div>
                       )}
@@ -548,4 +559,10 @@ interface Variant {
   sku: string;
   default: boolean;
   options?: Record<string, string>;
+  productId: string;
+  barcode: string;
+  inventory: string;
+  images: string[];
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }

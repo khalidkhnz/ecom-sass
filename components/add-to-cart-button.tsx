@@ -83,7 +83,9 @@ export default function AddToCartButton({
 
   return (
     <Button
-      className="w-full"
+      style={{
+        width: "calc(100% - 65px)",
+      }}
       size="lg"
       disabled={!inStock || loading || isLoading}
       onClick={handleAddToCart}
