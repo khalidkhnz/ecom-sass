@@ -57,6 +57,13 @@
       "when": 1744226763432,
       "tag": "0007_rainy_mister_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1744263969534,
+      "tag": "0008_magenta_doctor_strange",
+      "breakpoints": true
     }
   ]
 }

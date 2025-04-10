@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { PT_Sans } from "next/font/google";
-import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
+
+// import "./globals.css";
+import "./globals_ghibli.css";
+// import "./globals_sharpe_orange.css";
+// import "./globals_roundy_violet.css";
 
 const nunito = Nunito({
   variable: "--font-nunito",

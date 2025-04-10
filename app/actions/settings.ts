@@ -7,6 +7,7 @@ import { settings } from "@/schema/settings";
 import { auth } from "@/lib/auth";
 import { authorize } from "@/lib/authorize";
 import { z } from "zod";
+import { users } from "@/lib/schema";
 
 // Define validation schemas
 const generalSettingsSchema = z.object({
@@ -37,8 +38,35 @@ const storeSettingsSchema = z.object({
   shippingFrom: z.string().optional(),
 });
 
+// User notification settings schema
+const userNotificationSettingsSchema = z.object({
+  emailNotifications: z.boolean().default(true),
+  orderUpdates: z.boolean().default(true),
+  shippingUpdates: z.boolean().default(true),
+  deliveryUpdates: z.boolean().default(true),
+  marketingEmails: z.boolean().default(false),
+  productRecommendations: z.boolean().default(false),
+  salesAndPromotions: z.boolean().default(false),
+  backInStock: z.boolean().default(true),
+  priceDrops: z.boolean().default(true),
+  securityAlerts: z.boolean().default(true),
+  accountActivity: z.boolean().default(true),
+});
+
+// Payment methods preferences schema
+const paymentPreferencesSchema = z.object({
+  saveNewMethods: z.boolean().default(true),
+  oneClickCheckout: z.boolean().default(false),
+});
+
 export type GeneralSettingsFormValues = z.infer<typeof generalSettingsSchema>;
 export type StoreSettingsFormValues = z.infer<typeof storeSettingsSchema>;
+export type UserNotificationSettingsFormValues = z.infer<
+  typeof userNotificationSettingsSchema
+>;
+export type PaymentPreferencesFormValues = z.infer<
+  typeof paymentPreferencesSchema
+>;
 
 // Helper function to get current user with admin check
 async function getCurrentUser() {
@@ -239,5 +267,392 @@ export async function updateStoreSettings(formData: StoreSettingsFormValues) {
     }
 
     return { success: false, error: "Failed to update store settings" };
+  }
+}
+
+// Get user notification settings
+export async function getUserNotificationSettings() {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Get the user from the database
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        id: true,
+        notificationSettings: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Default settings if user has no saved preferences
+    const defaultSettings = {
+      emailNotifications: true,
+      orderUpdates: true,
+      shippingUpdates: true,
+      deliveryUpdates: true,
+      marketingEmails: false,
+      productRecommendations: false,
+      salesAndPromotions: false,
+      backInStock: true,
+      priceDrops: true,
+      securityAlerts: true,
+      accountActivity: true,
+    };
+
+    // Return user's saved notification settings or defaults
+    return {
+      success: true,
+      settings: user.notificationSettings || defaultSettings,
+    };
+  } catch (error) {
+    console.error("Error getting user notification settings:", error);
+    return {
+      success: false,
+      error: "Failed to fetch notification settings",
+    };
+  }
+}
+
+// Update user notification settings
+export async function updateUserNotificationSettings(
+  formData: UserNotificationSettingsFormValues
+) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Validate data
+    const validatedData = userNotificationSettingsSchema.parse(formData);
+
+    // Update the user's notification settings
+    await db
+      .update(users)
+      .set({
+        notificationSettings: validatedData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath("/user/settings/notifications");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user notification settings:", error);
+
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors };
+    }
+
+    return {
+      success: false,
+      error: "Failed to update notification settings",
+    };
+  }
+}
+
+// Get user payment preferences
+export async function getUserPaymentPreferences() {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Get the user from the database
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        id: true,
+        paymentPreferences: true,
+        paymentMethods: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Default payment preferences if user has no saved preferences
+    const defaultPreferences = {
+      saveNewMethods: true,
+      oneClickCheckout: false,
+    };
+
+    // Default empty payment methods if user has none
+    const defaultPaymentMethods: any[] = [];
+
+    // Return user's saved payment preferences or defaults
+    return {
+      success: true,
+      preferences: user.paymentPreferences || defaultPreferences,
+      paymentMethods: user.paymentMethods || defaultPaymentMethods,
+    };
+  } catch (error) {
+    console.error("Error getting user payment preferences:", error);
+    return {
+      success: false,
+      error: "Failed to fetch payment preferences",
+    };
+  }
+}
+
+// Update user payment preferences
+export async function updateUserPaymentPreferences(
+  formData: PaymentPreferencesFormValues
+) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Validate data
+    const validatedData = paymentPreferencesSchema.parse(formData);
+
+    // Update the user's payment preferences
+    await db
+      .update(users)
+      .set({
+        paymentPreferences: validatedData,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath("/user/settings/payment-methods");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user payment preferences:", error);
+
+    if (error instanceof z.ZodError) {
+      return { success: false, error: error.errors };
+    }
+
+    return {
+      success: false,
+      error: "Failed to update payment preferences",
+    };
+  }
+}
+
+// Save a payment method to the user's account
+export async function saveUserPaymentMethod(paymentMethod: any) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Get the user's current payment methods
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        id: true,
+        paymentMethods: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Update the user's payment methods
+    const existingMethods = user.paymentMethods || [];
+    const updatedMethods = [...existingMethods, paymentMethod];
+
+    // If this is the first payment method or it's marked as default, set it as default
+    if (paymentMethod.isDefault || existingMethods.length === 0) {
+      // Set all existing methods to not default
+      updatedMethods.forEach((method, index) => {
+        if (index < existingMethods.length) {
+          method.isDefault = false;
+        }
+      });
+    }
+
+    await db
+      .update(users)
+      .set({
+        paymentMethods: updatedMethods,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath("/user/settings/payment-methods");
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving payment method:", error);
+    return {
+      success: false,
+      error: "Failed to save payment method",
+    };
+  }
+}
+
+// Delete a payment method from the user's account
+export async function deleteUserPaymentMethod(methodId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Get the user's current payment methods
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        id: true,
+        paymentMethods: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    const existingMethods = user.paymentMethods || [];
+    const methodToDelete = existingMethods.find(
+      (method) => method.id === methodId
+    );
+
+    if (!methodToDelete) {
+      return {
+        success: false,
+        error: "Payment method not found",
+      };
+    }
+
+    // Filter out the payment method to delete
+    const updatedMethods = existingMethods.filter(
+      (method) => method.id !== methodId
+    );
+
+    // If the deleted method was the default, set the first remaining method as default
+    if (methodToDelete.isDefault && updatedMethods.length > 0) {
+      updatedMethods[0].isDefault = true;
+    }
+
+    await db
+      .update(users)
+      .set({
+        paymentMethods: updatedMethods,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath("/user/settings/payment-methods");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting payment method:", error);
+    return {
+      success: false,
+      error: "Failed to delete payment method",
+    };
+  }
+}
+
+// Update a payment method's default status
+export async function setDefaultPaymentMethod(methodId: string) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return {
+        success: false,
+        error: "Not authenticated",
+      };
+    }
+
+    // Get the user's current payment methods
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, session.user.id),
+      columns: {
+        id: true,
+        paymentMethods: true,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    const existingMethods = user.paymentMethods || [];
+
+    // Check if the method exists
+    if (!existingMethods.some((method) => method.id === methodId)) {
+      return {
+        success: false,
+        error: "Payment method not found",
+      };
+    }
+
+    // Update all methods' default status
+    const updatedMethods = existingMethods.map((method) => ({
+      ...method,
+      isDefault: method.id === methodId,
+    }));
+
+    await db
+      .update(users)
+      .set({
+        paymentMethods: updatedMethods,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, session.user.id));
+
+    revalidatePath("/user/settings/payment-methods");
+    return { success: true };
+  } catch (error) {
+    console.error("Error setting default payment method:", error);
+    return {
+      success: false,
+      error: "Failed to update default payment method",
+    };
   }
 }
