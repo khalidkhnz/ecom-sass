@@ -11,7 +11,7 @@ export async function authorize(role: Role): Promise<Session> {
 
   if (role === "admin") {
     if (!session?.user?.id) {
-      redirect("/admin-signin");
+      redirect("/admin-login");
     }
     if (session.user.role !== "admin") {
       throw new Error("unauthorized");
