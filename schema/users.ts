@@ -14,6 +14,35 @@ export interface Address {
   isDefault: boolean;
 }
 
+export interface PaymentMethod {
+  id: string;
+  type: string;
+  last4: string;
+  expiryMonth: string;
+  expiryYear: string;
+  nameOnCard: string;
+  isDefault: boolean;
+}
+
+export interface NotificationSettings {
+  emailNotifications: boolean;
+  orderUpdates: boolean;
+  shippingUpdates: boolean;
+  deliveryUpdates: boolean;
+  marketingEmails: boolean;
+  productRecommendations: boolean;
+  salesAndPromotions: boolean;
+  backInStock: boolean;
+  priceDrops: boolean;
+  securityAlerts: boolean;
+  accountActivity: boolean;
+}
+
+export interface PaymentPreferences {
+  saveNewMethods: boolean;
+  oneClickCheckout: boolean;
+}
+
 export const users = pgTable("users", {
   id: text()
     .primaryKey()
@@ -25,6 +54,11 @@ export const users = pgTable("users", {
   role: text().notNull(),
   password: text(),
   addresses: jsonb("addresses").$type<Address[]>().default([]),
+  paymentMethods: jsonb("payment_methods").$type<PaymentMethod[]>().default([]),
+  notificationSettings: jsonb(
+    "notification_settings"
+  ).$type<NotificationSettings>(),
+  paymentPreferences: jsonb("payment_preferences").$type<PaymentPreferences>(),
   adminNotes: text(),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp()

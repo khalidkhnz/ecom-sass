@@ -195,7 +195,7 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link href="/orders">
+                      <Link href="/user/orders">
                         <ShoppingBag className="mr-2 h-4 w-4" />
                         <span>Orders</span>
                       </Link>
