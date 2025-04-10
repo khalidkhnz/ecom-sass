@@ -162,7 +162,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
         <Button
           variant="outline"
           className={`${collapsed ? "justify-center w-full px-2" : "w-full"}`}
-          onClick={() => signOut({ callbackUrl: "/admin-login" })}
+          onClick={() => signOut({ callbackUrl: "/" })}
         >
           <LogOut className="h-4 w-4 mr-2" />
           {!collapsed && "Sign out"}
