@@ -5,8 +5,9 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Available themes
 export const THEMES = [
-  { name: "Default", file: "globals.css" },
+  { name: "Retro", file: "globals_retro.css" },
   { name: "Ghibli", file: "globals_ghibli.css" },
+  { name: "Roundy Pink", file: "globals_pink.css" },
   { name: "Orange", file: "globals_sharpe_orange.css" },
   { name: "Violet", file: "globals_roundy_violet.css" },
   { name: "Neon", file: "globals_neon.css" },
@@ -16,7 +17,6 @@ export const THEMES = [
   { name: "Ocean", file: "globals_ocean.css" },
   { name: "Desert", file: "globals_desert.css" },
   { name: "Cyberpunk", file: "globals_cyberpunk.css" },
-  { name: "Retro", file: "globals_retro.css" },
   { name: "Monochrome", file: "globals_monochrome.css" },
   { name: "Sunset", file: "globals_sunset.css" },
   { name: "Mint", file: "globals_mint.css" },
@@ -37,13 +37,13 @@ export function ThemeContextProvider({
   children: React.ReactNode;
 }) {
   const [isThemeLoading, setIsThemeLoading] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState("globals.css");
+  const [currentTheme, setCurrentTheme] = useState("globals_retro.css");
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
     // Load theme from localStorage on initial render
-    const savedTheme = localStorage.getItem("cssTheme") || "globals.css";
+    const savedTheme = localStorage.getItem("cssTheme") || "globals_retro.css";
     setCurrentTheme(savedTheme);
     loadTheme(savedTheme);
   }, []);
