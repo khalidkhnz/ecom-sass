@@ -4,10 +4,7 @@ import { PT_Sans } from "next/font/google";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
 
-// import "./globals.css";
-import "./globals_ghibli.css";
-// import "./globals_sharpe_orange.css";
-// import "./globals_roundy_violet.css";
+import "./globals.css";
 
 const nunito = Nunito({
   variable: "--font-nunito",

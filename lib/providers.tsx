@@ -7,6 +7,7 @@ import { ThemeProvider } from "./theme-provider";
 import { SessionProvider } from "next-auth/react";
 import { CartProvider } from "@/context/cart-context";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { ThemeContextProvider } from "./theme-context";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -25,19 +26,21 @@ export function Providers({ children }: { children: ReactNode }) {
     <NuqsAdapter>
       <SessionProvider>
         <CartProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <QueryClientProvider client={queryClient}>
-              {children}
-              {process.env.NODE_ENV === "development" && (
-                <ReactQueryDevtools initialIsOpen={false} />
-              )}
-            </QueryClientProvider>
-          </ThemeProvider>
+          <ThemeContextProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <QueryClientProvider client={queryClient}>
+                {children}
+                {process.env.NODE_ENV === "development" && (
+                  <ReactQueryDevtools initialIsOpen={false} />
+                )}
+              </QueryClientProvider>
+            </ThemeProvider>
+          </ThemeContextProvider>
         </CartProvider>
       </SessionProvider>
     </NuqsAdapter>

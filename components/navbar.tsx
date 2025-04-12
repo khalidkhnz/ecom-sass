@@ -16,6 +16,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import { ThemeToggle } from "./theme-toggle";
+import { CssThemeToggle } from "./css-theme-toggle";
 import { CartIcon } from "./cart-icon";
 import {
   DropdownMenu,
@@ -223,7 +224,8 @@ export function Navbar() {
             )}
 
             <CartIcon />
-            <ThemeToggle />
+            <CssThemeToggle />
+            <ThemeToggle directToggle />
           </div>
         </div>
       </Container>
@@ -297,6 +299,10 @@ export function Navbar() {
                 </Link>
               </div>
               <div className="py-6">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <CssThemeToggle />
+                  <ThemeToggle directToggle />
+                </div>
                 <Link
                   href="/login"
                   className="block px-3 py-2 text-base font-medium rounded-md hover:bg-accent"

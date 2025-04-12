@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
         net: false,
         tls: false,
       };
+
+      // Exclude problematic node modules from client bundle
+      config.externals = [...(config.externals || []), "@mapbox/node-pre-gyp"];
     }
     return config;
   },
