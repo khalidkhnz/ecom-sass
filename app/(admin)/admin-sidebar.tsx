@@ -22,6 +22,7 @@ import {
 import { useSettings } from "@/hooks/useSettings";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
+import { CssThemeToggle } from "@/components/css-theme-toggle";
 interface AdminSidebarProps {
   user: User;
 }
@@ -136,7 +137,14 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
           "justify-center": collapsed,
         })}
       >
-        <ThemeToggle directToggle={true} />
+        <div
+          className={cn("flex gap-2", {
+            "flex-col": collapsed,
+          })}
+        >
+          <CssThemeToggle />
+          <ThemeToggle directToggle={true} />
+        </div>
         {!collapsed && (
           <>
             <span className="dark:hidden">LIGHT MODE</span>
