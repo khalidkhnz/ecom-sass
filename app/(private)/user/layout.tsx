@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CssThemeToggle } from "@/components/css-theme-toggle";
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -185,7 +186,14 @@ export default function UserLayout({ children }: { children: ReactNode }) {
               "justify-center": collapsed,
             })}
           >
-            <ThemeToggle directToggle={true} />
+            <div
+              className={cn("flex gap-2", {
+                "flex-col": collapsed,
+              })}
+            >
+              <CssThemeToggle />
+              <ThemeToggle directToggle={true} />
+            </div>
             {!collapsed && (
               <>
                 <span className="dark:hidden">LIGHT MODE</span>

@@ -1,0 +1,619 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input-border: var(--input-border);
+  --color-input-background: var(--input-background);
+  --color-input-ring: var(--input-ring);
+}
+
+:root {
+  /* Base */
+  --background: oklch(
+    0.08 0.05 280
+  ); /* Deep space black with slight purple tint */
+  --foreground: oklch(0.95 0.03 280); /* Almost white with subtle coolness */
+
+  /* Background variations */
+  --muted: oklch(0.12 0.05 280); /* Slightly lighter than background */
+  --muted-foreground: oklch(0.7 0.05 280); /* Subdued text color */
+
+  /* Card colors */
+  --card: oklch(0.1 0.04 280); /* Deep space card background */
+  --card-foreground: oklch(0.9 0.03 280); /* Card text color */
+
+  /* Popover/Dialog colors */
+  --popover: oklch(0.12 0.06 280); /* Slightly more saturated than background */
+  --popover-foreground: oklch(0.9 0.03 280); /* Popover text color */
+
+  /* Border colors */
+  --border: oklch(0.15 0.05 280); /* Subtle border color */
+  --input: oklch(0.15 0.05 280); /* Form input borders */
+
+  /* Primary colors - cosmic purple */
+  --primary: oklch(0.65 0.28 295); /* Vibrant cosmic purple */
+  --primary-foreground: oklch(0.98 0.01 280); /* Text on primary buttons */
+
+  /* Secondary colors - deep space blue */
+  --secondary: oklch(0.25 0.1 260); /* Deep space blue */
+  --secondary-foreground: oklch(0.95 0.02 280); /* Text on secondary buttons */
+
+  /* Accent colors - cosmic nebula pink */
+  --accent: oklch(0.56 0.24 330); /* Cosmic nebula pink */
+  --accent-foreground: oklch(0.98 0.01 280); /* Text on accented elements */
+
+  /* Destructive action colors */
+  --destructive: oklch(0.65 0.3 30); /* Supernova red */
+  --destructive-foreground: oklch(
+    0.98 0.01 280
+  ); /* Text on destructive buttons */
+
+  /* Ring colors for focus states */
+  --ring: oklch(0.65 0.28 295); /* Match primary for consistency */
+
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Star colors for twinkle effect */
+  --star-color-1: oklch(0.95 0.03 280); /* Bright star */
+  --star-color-2: oklch(0.75 0.15 280); /* Medium brightness star */
+  --star-color-3: oklch(0.65 0.28 295); /* Purple tinted star */
+  --star-color-4: oklch(0.56 0.24 330); /* Pink tinted star */
+
+  /* Nebula colors */
+  --nebula-color-1: oklch(0.56 0.24 330); /* Pink nebula */
+  --nebula-color-2: oklch(0.65 0.28 295); /* Purple nebula */
+  --nebula-color-3: oklch(0.25 0.1 260); /* Blue nebula */
+}
+
+.dark {
+  /* Base */
+  --background: oklch(
+    0.08 0.05 280
+  ); /* Deep space black with slight purple tint */
+  --foreground: oklch(0.95 0.03 280); /* Almost white with subtle coolness */
+
+  /* Background variations */
+  --muted: oklch(0.12 0.05 280); /* Slightly lighter than background */
+  --muted-foreground: oklch(0.7 0.05 280); /* Subdued text color */
+
+  /* Card colors */
+  --card: oklch(0.1 0.04 280); /* Deep space card background */
+  --card-foreground: oklch(0.9 0.03 280); /* Card text color */
+
+  /* Popover/Dialog colors */
+  --popover: oklch(0.12 0.06 280); /* Slightly more saturated than background */
+  --popover-foreground: oklch(0.9 0.03 280); /* Popover text color */
+
+  /* Border colors */
+  --border: oklch(0.15 0.05 280); /* Subtle border color */
+  --input: oklch(0.15 0.05 280); /* Form input borders */
+
+  /* Primary colors - cosmic purple */
+  --primary: oklch(0.65 0.28 295); /* Vibrant cosmic purple */
+  --primary-foreground: oklch(0.98 0.01 280); /* Text on primary buttons */
+
+  /* Secondary colors - deep space blue */
+  --secondary: oklch(0.25 0.1 260); /* Deep space blue */
+  --secondary-foreground: oklch(0.95 0.02 280); /* Text on secondary buttons */
+
+  /* Accent colors - cosmic nebula pink */
+  --accent: oklch(0.56 0.24 330); /* Cosmic nebula pink */
+  --accent-foreground: oklch(0.98 0.01 280); /* Text on accented elements */
+
+  /* Destructive action colors */
+  --destructive: oklch(0.65 0.3 30); /* Supernova red */
+  --destructive-foreground: oklch(
+    0.98 0.01 280
+  ); /* Text on destructive buttons */
+
+  /* Ring colors for focus states */
+  --ring: oklch(0.65 0.28 295); /* Match primary for consistency */
+}
+
+/* Body styles with starfield background */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  background-image: url("/cosmic-pattern.svg"),
+    radial-gradient(ellipse at top, oklch(0.11 0.08 280), transparent 70%),
+    radial-gradient(ellipse at bottom, oklch(0.12 0.1 295), transparent 70%);
+  background-attachment: fixed;
+  background-size: 800px, 100% 50%, 100% 50%;
+  background-position: center, top, bottom;
+  background-repeat: repeat, no-repeat, no-repeat;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Fixed starfield background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='rgba(255, 255, 255, 0.1)' stroke-width='1'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3Cpath d='M-31 229L237 261 390 382 603 493 308.5 537.5 101.5 381.5M370 905L295 764'/%3E%3Cpath d='M520 660L578 842 731 737 840 599 603 493 520 660 295 764 309 538 390 382 539 269 769 229 577.5 41.5 370 105 295 -36 126.5 79.5 237 261 102 382 40 599 -69 737 127 880'/%3E%3Cpath d='M520-140L578.5 42.5 731-63M603 493L539 269 237 261 370 105M902 382L539 269M390 382L102 382'/%3E%3Cpath d='M-222 42L126.5 79.5 370 105 539 269 577.5 41.5 927 80 769 229 902 382 603 493 731 737M295-36L577.5 41.5M578 842L295 764M40-201L127 80M102 382L-261 269'/%3E%3C/g%3E%3Cg fill='rgba(255,255,255,0.08)'%3E%3Ccircle cx='769' cy='229' r='1'/%3E%3Ccircle cx='539' cy='269' r='1'/%3E%3Ccircle cx='603' cy='493' r='1'/%3E%3Ccircle cx='731' cy='737' r='1'/%3E%3Ccircle cx='520' cy='660' r='1'/%3E%3Ccircle cx='309' cy='538' r='1'/%3E%3Ccircle cx='295' cy='764' r='1'/%3E%3Ccircle cx='40' cy='599' r='1'/%3E%3Ccircle cx='102' cy='382' r='1'/%3E%3Ccircle cx='127' cy='80' r='1'/%3E%3Ccircle cx='370' cy='105' r='1'/%3E%3Ccircle cx='578' cy='42' r='1'/%3E%3Ccircle cx='237' cy='261' r='1'/%3E%3Ccircle cx='390' cy='382' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  z-index: -1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Twinkling stars effect */
+.twinkle {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.twinkle::before,
+.twinkle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+      1px 1px at 25% 10%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 10% 30%,
+      var(--star-color-2) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 30% 65%,
+      var(--star-color-3) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 70% 80%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 85% 40%,
+      var(--star-color-2) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 60% 20%,
+      var(--star-color-4) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 40% 50%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 90% 65%,
+      var(--star-color-3) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 15% 70%,
+      var(--star-color-2) 50%,
+      transparent 100%
+    );
+  background-repeat: repeat;
+  background-size: 800px 800px;
+}
+
+.twinkle::before {
+  animation: twinkle 15s linear infinite;
+}
+
+.twinkle::after {
+  background-image: radial-gradient(
+      1px 1px at 45% 5%,
+      var(--star-color-2) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 5% 45%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 55% 80%,
+      var(--star-color-4) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 20% 30%,
+      var(--star-color-3) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 75% 60%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 35% 70%,
+      var(--star-color-2) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 65% 25%,
+      var(--star-color-3) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      1px 1px at 80% 90%,
+      var(--star-color-4) 50%,
+      transparent 100%
+    ),
+    radial-gradient(
+      2px 2px at 95% 15%,
+      var(--star-color-1) 50%,
+      transparent 100%
+    );
+  background-repeat: repeat;
+  background-size: 600px 600px;
+  animation: twinkle 20s linear infinite;
+}
+
+@keyframes twinkle {
+  0% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100px);
+    opacity: 0.7;
+  }
+}
+
+/* Nebula effect */
+.nebula {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.nebula::before {
+  content: "";
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  top: 15%;
+  left: 20%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(90, 30, 170, 0.2) 0%,
+    rgba(140, 60, 200, 0.1) 40%,
+    rgba(200, 100, 240, 0.05) 60%,
+    transparent 100%
+  );
+  filter: blur(30px);
+  opacity: 0.3;
+  animation: nebula-drift 60s ease-in-out infinite alternate;
+}
+
+.nebula::after {
+  content: "";
+  position: absolute;
+  width: 40%;
+  height: 40%;
+  bottom: 15%;
+  right: 15%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(200, 70, 140, 0.2) 0%,
+    rgba(160, 50, 120, 0.1) 40%,
+    rgba(100, 40, 180, 0.05) 70%,
+    transparent 100%
+  );
+  filter: blur(20px);
+  opacity: 0.2;
+  animation: nebula-drift 75s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes nebula-drift {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(5%, 3%) rotate(5deg) scale(1.05);
+  }
+  100% {
+    transform: translate(-3%, -2%) rotate(-3deg) scale(0.98);
+  }
+}
+
+/* Cosmic glow for buttons */
+.cosmic-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.cosmic-glow::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(
+    45deg,
+    var(--primary),
+    var(--accent),
+    var(--secondary),
+    var(--primary)
+  );
+  background-size: 400% 400%;
+  z-index: -1;
+  filter: blur(7px);
+  animation: cosmic-glow 15s ease infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  border-radius: calc(var(--radius) + 2px);
+}
+
+.cosmic-glow:hover::before {
+  opacity: 0.7;
+}
+
+@keyframes cosmic-glow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Accordion animation */
+.accordion-content {
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accordion-content[data-state="closed"] {
+  animation: accordion-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accordion-content[data-state="open"] {
+  animation: accordion-down 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--primary), var(--secondary));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(var(--primary), var(--accent));
+}
+
+/* Card hover effect */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(90, 30, 170, 0.3);
+}
+
+/* Cosmic pattern overlay for specific sections */
+.cosmic-pattern-overlay {
+  position: relative;
+}
+
+.cosmic-pattern-overlay::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("/cosmic-pattern.svg");
+  background-size: 600px;
+  background-position: center;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Add cosmic pattern to cards with hover effect */
+.card.cosmic-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.card.cosmic-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("/cosmic-pattern.svg");
+  background-size: 400px;
+  background-position: center;
+  opacity: 0.05;
+  transition: opacity 0.3s ease, transform 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card.cosmic-card:hover::before {
+  opacity: 0.15;
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Constellation highlight effect */
+.constellation-highlight {
+  position: relative;
+}
+
+.constellation-highlight::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 150px;
+  height: 150px;
+  background-image: url("/cosmic-pattern.svg");
+  background-size: 300px;
+  background-position: top right;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+  animation: constellation-pulse 8s ease-in-out infinite;
+}
+
+@keyframes constellation-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.05);
+  }
+}
+
+/* Hero section with cosmic pattern background */
+.hero-cosmic {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.hero-cosmic::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("/cosmic-pattern.svg");
+  background-size: 800px;
+  background-position: center;
+  opacity: 0.15;
+  z-index: -1;
+  animation: cosmic-drift 30s linear infinite;
+}
+
+@keyframes cosmic-drift {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 800px 800px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .texture {
+    background-image: url("/texture.jpg");
+    background-repeat: repeat;
+    background-size: 200px;
+    background-position: center;
+    background-blend-mode: color-dodge;
+    opacity: 0.06;
+  }
+
+  .star-field {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .star-field::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("/star-field.svg");
+    background-size: 400px;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: -1;
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Loader from "@/components/loader";
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 // Available themes
@@ -18,6 +19,9 @@ export const THEMES = [
   { name: "Retro", file: "globals_retro.css" },
   { name: "Monochrome", file: "globals_monochrome.css" },
   { name: "Sunset", file: "globals_sunset.css" },
+  { name: "Mint", file: "globals_mint.css" },
+  { name: "Lavender", file: "globals_lavender.css" },
+  { name: "Cosmic", file: "globals_cosmic.css" },
 ];
 
 type ThemeContextType = {
@@ -32,6 +36,7 @@ export function ThemeContextProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const [isThemeLoading, setIsThemeLoading] = useState(false);
   const [currentTheme, setCurrentTheme] = useState("globals.css");
   const [isClient, setIsClient] = useState(false);
 
@@ -47,6 +52,7 @@ export function ThemeContextProvider({
   const loadTheme = (themeName: string) => {
     if (!isClient) return;
 
+    setIsThemeLoading(true);
     // Create a link element for the CSS
     let link = document.getElementById("css-theme") as HTMLLinkElement;
 
@@ -60,6 +66,7 @@ export function ThemeContextProvider({
 
     // Set the href to the theme CSS file
     link.href = `/${themeName}`;
+    setIsThemeLoading(false);
   };
 
   // Function to change theme
@@ -76,7 +83,7 @@ export function ThemeContextProvider({
 
   return (
     <ThemeContext.Provider value={{ currentTheme, setTheme }}>
-      {children}
+      {isThemeLoading ? <Loader /> : children}
       {isClient && (
         <link id="css-theme" rel="stylesheet" href={`/${currentTheme}`} />
       )}

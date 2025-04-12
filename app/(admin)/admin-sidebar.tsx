@@ -119,11 +119,13 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center py-2 px-3 rounded-md transition-colors ${
+              className={cn(
+                "flex items-center rounded-md py-2 px-3 transition-colors",
                 pathname === item.href
                   ? "bg-primary text-primary-foreground"
-                  : "text-gray-700 hover:bg-gray-100"
-              } ${collapsed ? "justify-center" : ""}`}
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
+                collapsed ? "justify-center" : ""
+              )}
             >
               {item.icon}
               {!collapsed && <span className="ml-3">{item.label}</span>}

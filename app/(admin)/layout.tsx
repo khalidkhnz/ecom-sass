@@ -21,7 +21,7 @@ export default async function Layout({
   }
 
   return (
-    <div className="flex min-h-screen bg-accent">
+    <div className="flex min-h-screen">
       <AdminSidebar user={userRow} />
       <div className="flex-1 p-8">{children}</div>
     </div>

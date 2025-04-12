@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <!-- Define gradients -->
+  <defs>
+    <linearGradient id="grid-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3a1e7a" stop-opacity="0.05"/>
+      <stop offset="50%" stop-color="#2d1a6e" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#3a1e7a" stop-opacity="0.05"/>
+    </linearGradient>
+    
+    <radialGradient id="star-glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#c4b5ff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#8d6cff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="none"/>
+  
+  <!-- Grid pattern -->
+  <g opacity="0.2">
+    <!-- Horizontal lines -->
+    <line x1="0" y1="50" x2="400" y2="50" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="100" x2="400" y2="100" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="150" x2="400" y2="150" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="200" x2="400" y2="200" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="250" x2="400" y2="250" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="300" x2="400" y2="300" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="0" y1="350" x2="400" y2="350" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    
+    <!-- Vertical lines -->
+    <line x1="50" y1="0" x2="50" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="100" y1="0" x2="100" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="150" y1="0" x2="150" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="200" y1="0" x2="200" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="250" y1="0" x2="250" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="300" y1="0" x2="300" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+    <line x1="350" y1="0" x2="350" y2="400" stroke="url(#grid-gradient)" stroke-width="0.5"/>
+  </g>
+  
+  <!-- Constellation 1: "Cosmic Crown" -->
+  <g>
+    <!-- Stars in constellation -->
+    <circle cx="100" cy="80" r="1.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="130" cy="60" r="1.8" fill="#ffffff" opacity="0.9"/>
+    <circle cx="155" cy="90" r="1.3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="190" cy="70" r="2" fill="#ffffff" opacity="0.9"/>
+    <circle cx="210" cy="95" r="1.5" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Constellation lines -->
+    <line x1="100" y1="80" x2="130" y2="60" stroke="#8d6cff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="130" y1="60" x2="155" y2="90" stroke="#8d6cff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="155" y1="90" x2="190" y2="70" stroke="#8d6cff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="190" y1="70" x2="210" y2="95" stroke="#8d6cff" stroke-width="0.5" opacity="0.4"/>
+  </g>
+  
+  <!-- Constellation 2: "Cosmic Voyager" -->
+  <g>
+    <!-- Stars in constellation -->
+    <circle cx="250" cy="170" r="1.7" fill="#ffffff" opacity="0.9"/>
+    <circle cx="280" cy="200" r="1.4" fill="#ffffff" opacity="0.9"/>
+    <circle cx="320" cy="180" r="1.9" fill="#ffffff" opacity="0.9"/>
+    <circle cx="340" cy="220" r="1.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="310" cy="240" r="1.6" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Constellation lines -->
+    <line x1="250" y1="170" x2="280" y2="200" stroke="#b392ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="280" y1="200" x2="320" y2="180" stroke="#b392ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="320" y1="180" x2="340" y2="220" stroke="#b392ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="340" y1="220" x2="310" y2="240" stroke="#b392ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="310" y1="240" x2="280" y2="200" stroke="#b392ff" stroke-width="0.5" opacity="0.4"/>
+  </g>
+  
+  <!-- Constellation 3: "Cosmic Portal" -->
+  <g>
+    <!-- Stars in constellation -->
+    <circle cx="80" cy="280" r="1.8" fill="#ffffff" opacity="0.9"/>
+    <circle cx="120" cy="310" r="1.5" fill="#ffffff" opacity="0.9"/>
+    <circle cx="150" cy="270" r="2" fill="#ffffff" opacity="0.9"/>
+    <circle cx="180" cy="320" r="1.7" fill="#ffffff" opacity="0.9"/>
+    <circle cx="140" cy="350" r="1.4" fill="#ffffff" opacity="0.9"/>
+    <circle cx="100" cy="330" r="1.6" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Constellation lines -->
+    <line x1="80" y1="280" x2="120" y2="310" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="120" y1="310" x2="150" y2="270" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="150" y1="270" x2="180" y2="320" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="180" y1="320" x2="140" y2="350" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="140" y1="350" x2="100" y2="330" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+    <line x1="100" y1="330" x2="80" y2="280" stroke="#9c78ff" stroke-width="0.5" opacity="0.4"/>
+  </g>
+  
+  <!-- Random stars scattered throughout -->
+  <g>
+    <circle cx="30" cy="40" r="1.2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="50" cy="120" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="90" cy="180" r="1.3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="220" cy="30" r="1.1" fill="#ffffff" opacity="0.8"/>
+    <circle cx="260" cy="80" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="290" cy="130" r="1.2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="350" cy="60" r="1.3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="370" cy="150" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="380" cy="280" r="1.2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="330" cy="350" r="1.1" fill="#ffffff" opacity="0.8"/>
+    <circle cx="250" cy="330" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="200" cy="375" r="1.2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="70" cy="370" r="1.1" fill="#ffffff" opacity="0.8"/>
+    <circle cx="25" cy="310" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="40" cy="220" r="1.3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="160" cy="180" r="1.2" fill="#ffffff" opacity="0.8"/>
+    <circle cx="190" cy="230" r="1" fill="#ffffff" opacity="0.7"/>
+    <circle cx="240" cy="260" r="1.1" fill="#ffffff" opacity="0.8"/>
+  </g>
+  
+  <!-- Subtle glow effects -->
+  <circle cx="155" cy="90" r="10" fill="url(#star-glow)" opacity="0.4"/>
+  <circle cx="280" cy="200" r="12" fill="url(#star-glow)" opacity="0.3"/>
+  <circle cx="150" cy="270" r="15" fill="url(#star-glow)" opacity="0.3"/>
+</svg> 
