@@ -8,6 +8,16 @@ export const THEMES = [
   { name: "Ghibli", file: "globals_ghibli.css" },
   { name: "Orange", file: "globals_sharpe_orange.css" },
   { name: "Violet", file: "globals_roundy_violet.css" },
+  { name: "Neon", file: "globals_neon.css" },
+  { name: "Pastel", file: "globals_pastel.css" },
+  { name: "Midnight", file: "globals_midnight.css" },
+  { name: "Forest", file: "globals_forest.css" },
+  { name: "Ocean", file: "globals_ocean.css" },
+  { name: "Desert", file: "globals_desert.css" },
+  { name: "Cyberpunk", file: "globals_cyberpunk.css" },
+  { name: "Retro", file: "globals_retro.css" },
+  { name: "Monochrome", file: "globals_monochrome.css" },
+  { name: "Sunset", file: "globals_sunset.css" },
 ];
 
 type ThemeContextType = {
