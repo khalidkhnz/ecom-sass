@@ -53,7 +53,7 @@ export function HeroBanner({
             <Button
               size="lg"
               variant="outline"
-              className="border-white text-white hover:bg-white hover:text-black"
+              className="text-primary"
               asChild
             >
               <Link href={secondaryButtonLink}>{secondaryButtonText}</Link>
